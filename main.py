@@ -91,7 +91,8 @@ st.markdown("""
 스페인의 아름다운 주요 관광지들을 소개합니다. 아래 지도에서 원하는 장소를 클릭하여 자세한 정보를 확인해 보세요!
 """)
 
-st_folium(m, width=1200, height=800)
+# 지도 크기를 width=800, height=600으로 조정
+st_folium(m, width=800, height=600)
 
 st.markdown("""
 ---
