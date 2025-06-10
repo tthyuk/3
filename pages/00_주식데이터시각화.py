@@ -150,12 +150,14 @@ if not stock_data.empty:
                 individual_df = pd.DataFrame(close_prices[selected_company_name])
                 
                 # plotly.express.line을 사용하여 개별 기업 차트 생성
+                # trendline="ols"를 추가하여 추세선 표현
                 fig_individual = px.line(
                     individual_df,
                     x=individual_df.index,
                     y=individual_df.columns[0], # 단일 컬럼의 이름 (기업명)
                     title=f"{selected_company_name} 주가",
                     labels={"value": "종가", "index": "날짜"},
+                    trendline="ols" # OLS(최소제곱법) 기반 추세선 추가
                 )
                 fig_individual.update_layout(hovermode="x unified")
                 st.plotly_chart(fig_individual, use_container_width=True)
