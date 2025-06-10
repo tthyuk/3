@@ -147,33 +147,21 @@ if not stock_data.empty:
             if selected_ticker and selected_company_name in close_prices.columns:
                 st.write(f"**{selected_company_name} 주가 데이터 (최근 3년 종가):**")
                 
-                # 선택된 기업의 종가 Series를 가져오고, 혹시 모를 NaN 값 한 번 더 제거
-                individual_series = close_prices[selected_company_name].dropna()
-                
-                # Plotly Express가 trendline과 함께 날짜를 올바르게 처리하도록
-                # 명시적인 DataFrame과 컬럼 이름을 사용
-                plot_df = pd.DataFrame({
-                    'Date_Numeric': pd.to_numeric(individual_series.index), # 날짜를 숫자형(Unix 타임스탬프)으로 변환
-                    'Price': individual_series.values
-                })
+                # 선택된 기업의 종가 Series를 DataFrame으로 변환하고 인덱스를 리셋하여 'Date' 컬럼으로 만듦
+                individual_df = pd.DataFrame(close_prices[selected_company_name]).reset_index()
+                # 컬럼 이름 명확히 설정 (첫 번째 컬럼은 날짜, 두 번째 컬럼은 기업명)
+                individual_df.columns = ['Date', selected_company_name]
                 
                 # plotly.express.line을 사용하여 개별 기업 차트 생성
+                # trendline="ols"를 추가하여 추세선 표현
                 fig_individual = px.line(
-                    plot_df,
-                    x="Date_Numeric", # 숫자형 날짜 컬럼 사용
-                    y="Price", # 'Price' 컬럼 사용
+                    individual_df,
+                    x="Date", # 'Date' 컬럼 사용
+                    y=selected_company_name, # 단일 컬럼의 이름 (기업명)
                     title=f"{selected_company_name} 주가",
-                    labels={"Price": "종가", "Date_Numeric": "날짜"}, # 라벨 설정 (초기)
+                    labels={"value": "종가", "Date": "날짜"}, # 라벨도 'Date'로 변경
                     trendline="ols" # OLS(최소제곱법) 기반 추세선 추가
                 )
-                
-                # x축을 다시 날짜 형식으로 표시하도록 업데이트
-                fig_individual.update_xaxes(
-                    type="date", # x축 타입을 날짜로 지정
-                    tickformat="%Y-%m-%d", # 날짜 표시 형식 지정
-                    title_text="날짜" # 최종 x축 라벨 설정
-                )
-
                 fig_individual.update_layout(hovermode="x unified")
                 st.plotly_chart(fig_individual, use_container_width=True)
 
