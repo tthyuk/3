@@ -87,8 +87,41 @@ folium.GeoJson(
     style_function=style_function
 ).add_to(m)
 
+# 국가별 한글 이름 및 위치 정보
+country_names = {
+    '프랑스': [46.2, 2.2],
+    '포르투갈': [39.4, -8.2],
+    '안도라': [42.5, 1.6],
+    '모로코': [31.8, -7.1],
+    '알제리': [28.0, 1.6]
+}
 
-# 마커 추가
+# 툴팁 스타일링을 위한 CSS 추가
+tooltip_style = """
+<style>
+.country-tooltip {
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
+  font-weight: bold;
+  font-size: 14px;
+  color: #4A4A4A;
+  text-shadow: 1px 1px 1px white;
+}
+</style>
+"""
+m.get_root().html.add_child(folium.Element(tooltip_style))
+
+# 국가 이름 (한글) 툴팁 추가
+for name, coords in country_names.items():
+    folium.Marker(
+        location=coords,
+        icon=folium.DivIcon(icon_size=(0,0), html=''), # 투명한 아이콘
+        tooltip=folium.Tooltip(name, permanent=True, direction='center', class_name='country-tooltip')
+    ).add_to(m)
+
+
+# 관광지 마커 추가
 for attraction in attractions:
     folium.Marker(
         location=attraction["coords"],
