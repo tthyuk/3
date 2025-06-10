@@ -153,19 +153,27 @@ if not stock_data.empty:
                 # Plotly Express가 trendline과 함께 날짜를 올바르게 처리하도록
                 # 명시적인 DataFrame과 컬럼 이름을 사용
                 plot_df = pd.DataFrame({
-                    'Date': individual_series.index,
+                    'Date_Numeric': pd.to_numeric(individual_series.index), # 날짜를 숫자형(Unix 타임스탬프)으로 변환
                     'Price': individual_series.values
                 })
                 
                 # plotly.express.line을 사용하여 개별 기업 차트 생성
                 fig_individual = px.line(
                     plot_df,
-                    x="Date", # 'Date' 컬럼 사용
+                    x="Date_Numeric", # 숫자형 날짜 컬럼 사용
                     y="Price", # 'Price' 컬럼 사용
                     title=f"{selected_company_name} 주가",
-                    labels={"Price": "종가", "Date": "날짜"}, # 라벨 설정
+                    labels={"Price": "종가", "Date_Numeric": "날짜"}, # 라벨 설정 (초기)
                     trendline="ols" # OLS(최소제곱법) 기반 추세선 추가
                 )
+                
+                # x축을 다시 날짜 형식으로 표시하도록 업데이트
+                fig_individual.update_xaxes(
+                    type="date", # x축 타입을 날짜로 지정
+                    tickformat="%Y-%m-%d", # 날짜 표시 형식 지정
+                    title_text="날짜" # 최종 x축 라벨 설정
+                )
+
                 fig_individual.update_layout(hovermode="x unified")
                 st.plotly_chart(fig_individual, use_container_width=True)
 
