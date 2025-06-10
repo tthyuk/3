@@ -96,18 +96,7 @@ if not stock_data.empty:
             hover_name="variable" # 마우스 오버 시 기업 이름 표시
         )
         # 마우스 오버 시 모든 라인 정보 표시
-        fig_normalized.update_layout(
-            hovermode="x unified",
-            height=600, # 차트 높이 증가
-            legend=dict(
-                orientation="v", # 범례를 수직으로 정렬
-                xanchor="left",  # x축 앵커를 왼쪽으로 설정
-                x=1.02,          # 차트 영역 바깥, 오른쪽에 위치 (여백 추가)
-                yanchor="top",   # y축 앵커를 위쪽으로 설정
-                y=1              # 차트 영역 상단에 위치
-            ),
-            margin=dict(l=0, r=180, t=30, b=0) # 오른쪽 여백을 늘려 범례 공간 확보
-        )
+        fig_normalized.update_layout(hovermode="x unified")
         # Streamlit에 Plotly 차트 표시 (컨테이너 너비에 맞춤)
         st.plotly_chart(fig_normalized, use_container_width=True)
 
@@ -121,18 +110,7 @@ if not stock_data.empty:
             labels={"value": "종가", "index": "날짜", "variable": "기업"},
             hover_name="variable"
         )
-        fig_raw.update_layout(
-            hovermode="x unified",
-            height=600, # 차트 높이 증가
-            legend=dict(
-                orientation="v", # 범례를 수직으로 정렬
-                xanchor="left",  # x축 앵커를 왼쪽으로 설정
-                x=1.02,          # 차트 영역 바깥, 오른쪽에 위치 (여백 추가)
-                yanchor="top",   # y축 앵커를 위쪽으로 설정
-                y=1              # 차트 영역 상단에 위치
-            ),
-            margin=dict(l=0, r=180, t=30, b=0) # 오른쪽 여백을 늘려 범례 공간 확보
-        )
+        fig_raw.update_layout(hovermode="x unified")
         st.plotly_chart(fig_raw, use_container_width=True)
 
         # --- 개별 기업 주가 데이터 보기 ---
