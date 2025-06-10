@@ -20,19 +20,23 @@ st.markdown("""
 # 글로벌 시가총액 상위권에 있을 가능성이 높은 기업들 (예시)
 # 실제 사용 시에는 이 리스트를 최신 정보로 업데이트해야 합니다.
 # 한국 기업을 추가하려면 "005930.KS" (삼성전자) 와 같이 ".KS"를 붙여야 합니다.
-TICKERS = [
-    "AAPL",  # Apple (애플)
-    "MSFT",  # Microsoft (마이크로소프트)
-    "GOOGL", # Alphabet Class A (알파벳 A)
-    "AMZN",  # Amazon (아마존)
-    "NVDA",  # NVIDIA (엔비디아)
-    "META",  # Meta Platforms (메타 플랫폼스)
-    "TSLA",  # Tesla (테슬라)
-    "BRK-A", # Berkshire Hathaway Class A (버크셔 해서웨이 A) - A 대신 B (BRK-B)를 쓰는 경우도 많음
-    "JPM",   # JPMorgan Chase & Co. (JP모건 체이스)
-    "LLY",   # Eli Lilly and Company (일라이 릴리 앤 컴퍼니) - 최근 시총 상승
-    # "005930.KS", # Example: Samsung Electronics (삼성전자) - 한국 주식은 ".KS" (KOSPI) 또는 ".KQ" (KOSDAQ)
-]
+# TICKERS를 딕셔너리 형태로 변경하여 티커와 전체 기업명을 매핑합니다.
+TICKERS = {
+    "AAPL": "Apple Inc.",
+    "MSFT": "Microsoft Corp.",
+    "GOOGL": "Alphabet Inc. (Class A)",
+    "AMZN": "Amazon.com Inc.",
+    "NVDA": "NVIDIA Corp.",
+    "META": "Meta Platforms Inc.",
+    "TSLA": "Tesla Inc.",
+    "BRK-A": "Berkshire Hathaway Inc. (Class A)",
+    "JPM": "JPMorgan Chase & Co.",
+    "LLY": "Eli Lilly and Company",
+    # "005930.KS": "Samsung Electronics Co., Ltd.", # 예시: 삼성전자
+}
+
+# yfinance에 전달할 티커 목록 (딕셔너리의 키 값들)
+yf_tickers = list(TICKERS.keys())
 
 # 최근 3년 데이터 가져오기 위한 날짜 설정
 end_date = datetime.now()
@@ -51,13 +55,13 @@ def get_stock_data(tickers, start, end):
     return data
 
 # 주가 데이터 가져오기
-stock_data = get_stock_data(TICKERS, start_date, end_date)
+stock_data = get_stock_data(yf_tickers, start_date, end_date)
 
 # 데이터가 성공적으로 로드되었는지 확인
 if not stock_data.empty:
     # 각 기업의 'Close' (종가) 가격만 추출하여 하나의 DataFrame으로 결합
     close_prices = pd.DataFrame()
-    for ticker in TICKERS:
+    for ticker in yf_tickers:
         # yfinance 다운로드 결과는 멀티인덱스 컬럼을 가질 수 있습니다.
         # 각 티커의 'Close' 가격을 올바르게 참조합니다.
         if (ticker, 'Close') in stock_data.columns:
@@ -71,6 +75,10 @@ if not stock_data.empty:
         # 결측치 제거 (주말, 공휴일 등으로 데이터가 없는 경우)
         close_prices = close_prices.dropna()
 
+        # close_prices DataFrame의 컬럼 이름을 전체 기업명으로 변경
+        # 이렇게 하면 그래프의 범례와 호버 텍스트에 전체 기업명이 표시됩니다.
+        close_prices.rename(columns=TICKERS, inplace=True)
+
         # 주가 변화율 계산 (첫 번째 날짜의 가격을 100으로 정규화)
         # 이를 통해 각 기업의 상대적인 성과를 비교하기 용이합니다.
         # .iloc[0]은 DataFrame의 첫 번째 행(즉, 첫 번째 날짜의 가격)을 가져옵니다.
@@ -82,7 +90,7 @@ if not stock_data.empty:
         fig_normalized = px.line(
             normalized_prices,
             x=normalized_prices.index, # x축: 날짜
-            y=normalized_prices.columns, # y축: 각 기업의 티커
+            y=normalized_prices.columns, # y축: 각 기업의 전체 기업명
             title="글로벌 시가총액 상위 기업 최근 3년간 주가 변화 (시작일 기준 100)",
             labels={"value": "주가 (시작일 기준 100)", "index": "날짜", "variable": "기업"},
             hover_name="variable" # 마우스 오버 시 기업 이름 표시
@@ -107,18 +115,23 @@ if not stock_data.empty:
 
         # --- 개별 기업 주가 데이터 보기 ---
         st.subheader("개별 기업 주가 데이터 자세히 보기")
-        # 사용자가 드롭다운 메뉴에서 기업을 선택하도록 허용
-        selected_ticker = st.selectbox("기업을 선택하세요:", TICKERS)
-        if selected_ticker:
-            if selected_ticker in close_prices.columns:
-                st.write(f"**{selected_ticker} 주가 데이터 (최근 3년 종가):**")
-                # 선택된 기업의 종가만 차트로 표시
-                st.line_chart(close_prices[selected_ticker])
-                st.write(f"**{selected_ticker} 원본 데이터 (상위 5개 행):**")
-                # 원본 데이터의 상위 5개 행을 DataFrame으로 표시
+        # 사용자가 드롭다운 메뉴에서 기업을 선택하도록 허용 (전체 기업명 표시)
+        selected_company_name = st.selectbox("기업을 선택하세요:", list(TICKERS.values()))
+
+        if selected_company_name:
+            # 선택된 기업명에 해당하는 티커를 찾음
+            # .get()을 사용하여 안전하게 티커를 가져오도록 변경
+            selected_ticker = next((ticker for ticker, name in TICKERS.items() if name == selected_company_name), None)
+
+            if selected_ticker and selected_company_name in close_prices.columns:
+                st.write(f"**{selected_company_name} 주가 데이터 (최근 3년 종가):**")
+                # 선택된 기업의 종가만 차트로 표시 (컬럼 이름이 이미 변경되었으므로 selected_company_name 사용)
+                st.line_chart(close_prices[selected_company_name])
+                st.write(f"**{selected_company_name} 원본 데이터 (상위 5개 행):**")
+                # 원본 stock_data는 티커를 키로 사용하므로 selected_ticker를 사용
                 st.dataframe(stock_data[selected_ticker].head())
             else:
-                st.info(f"선택하신 '{selected_ticker}'의 주가 데이터를 찾을 수 없습니다. 티커를 확인해주세요.")
+                st.info(f"선택하신 '{selected_company_name}'의 주가 데이터를 찾을 수 없습니다. 티커를 확인해주세요.")
 
     else:
         st.error("선택된 기업들의 유효한 주가 데이터를 가져오는 데 실패했습니다. 티커 리스트를 확인하거나, 데이터가 존재하지 않을 수 있습니다.")
