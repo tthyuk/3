@@ -2,6 +2,8 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go # Import plotly.graph_objects
+import statsmodels.api as sm # Import statsmodels for OLS
 from datetime import datetime, timedelta
 
 # Streamlit 페이지 설정: 전체 너비 사용
@@ -152,34 +154,39 @@ if not stock_data.empty:
                 # 추세선 계산을 위해 날짜를 숫자로 변환한 새로운 컬럼을 추가합니다. (예: 0부터 시작하는 순차적인 인덱스)
                 individual_df['Numerical_Index'] = range(len(individual_df))
 
-                # plotly.express.line을 사용하여 개별 기업 차트 생성
-                # trendline='ols'를 추가하여 추세선 표현
-                # x축에는 추세선 계산을 위한 숫자 값인 'Numerical_Index'를 사용합니다.
+                # plotly.express.line을 사용하여 개별 기업 차트 생성 (trendline 없이)
                 fig_individual = px.line(
                     individual_df,
-                    x='Numerical_Index', 
+                    x='Date', # 원래 날짜를 x축으로 사용
                     y='Close',
                     title=f"{selected_company_name} 주가",
-                    labels={"Close": "종가", "Numerical_Index": "날짜"}, # 호버 시 표시될 레이블 설정
-                    trendline='ols' # 추세선 추가
+                    labels={"Close": "종가", "Date": "날짜"},
                 )
 
-                # x축에 실제 날짜를 표시하기 위해 tickvals와 ticktext를 수동으로 설정합니다.
-                tickvals_for_display = individual_df['Numerical_Index'].tolist()
-                ticktext_for_display = individual_df['Date'].dt.strftime('%Y-%m-%d').tolist()
-
-                # 데이터 포인트가 적을 경우 tick sampling step을 조정합니다.
-                step = max(1, len(tickvals_for_display) // 5) # 최소 1을 보장하여 ZeroDivisionError 방지
+                # OLS (Ordinary Least Squares) 회귀를 사용하여 추세선을 수동으로 추가
+                # x 값은 Numerical_Index를 사용하고 상수 항을 추가합니다.
+                X = sm.add_constant(individual_df['Numerical_Index'])
+                y = individual_df['Close']
                 
-                fig_individual.update_layout(
-                    hovermode="x unified",
-                    xaxis=dict(
-                        tickmode='array',
-                        tickvals=tickvals_for_display[::step], # 눈금 위치
-                        ticktext=ticktext_for_display[::step], # 눈금 텍스트 (날짜)
-                        title="날짜" # x축 레이블
+                try:
+                    model = sm.OLS(y, X)
+                    results = model.fit()
+                    trend_line_values = results.predict(X)
+
+                    # 추세선을 Plotly 그래프에 추가합니다.
+                    fig_individual.add_trace(
+                        go.Scatter(
+                            x=individual_df['Date'], # 실제 날짜를 x축으로 사용
+                            y=trend_line_values,
+                            mode='lines',
+                            name='추세선 (OLS)',
+                            line=dict(color='red', dash='dash')
+                        )
                     )
-                )
+                except Exception as e:
+                    st.warning(f"추세선 계산 중 오류가 발생했습니다: {e}. 데이터가 충분하지 않거나 변동성이 너무 클 수 있습니다.")
+
+                fig_individual.update_layout(hovermode="x unified")
                 st.plotly_chart(fig_individual, use_container_width=True)
 
                 st.write(f"**{selected_company_name} 원본 데이터 (상위 5개 행):**")
@@ -191,4 +198,3 @@ if not stock_data.empty:
         st.error("선택된 기업들의 유효한 주가 데이터를 가져오는 데 실패했습니다. 티커 리스트를 확인하거나, 데이터가 존재하지 않을 수 있습니다.")
 else:
     st.error("주가 데이터를 가져오는 데 실패했습니다. 인터넷 연결 상태나 티커 리스트가 올바른지 확인해주세요.")
-
