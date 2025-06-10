@@ -34,12 +34,14 @@ fig_population.update_layout(title="모집단 정규 분포",
                              xaxis_title="값",
                              yaxis_title="확률 밀도",
                              height=400)
+# 모집단 분포는 사용자가 설정한 모수(모평균, 모표준편차)에 따라 범위가 변하는 것이 자연스러움.
+# 따라서 x축 범위를 고정하지 않고 동적으로 유지합니다.
 st.plotly_chart(fig_population, use_container_width=True)
 
 st.header("2. 표본 추출 및 표본 평균 분포 (중심 극한 정리)")
 st.markdown(
     "모집단에서 여러 번 표본을 추출하고 각 표본의 평균을 계산합니다. 표본 평균들의 분포가 어떻게 변하는지 확인해 보세요. "
-    "표본의 크기가 커질수록 표본 평균의 분포는 모집단 분포와 관계없이 정규 분포에 가까워지며, 그 평균은 모평균에 수렴합니다. (중심 극한 정리)"
+    "**표본의 크기가 커질수록 표본 평균의 분포는 모집단 분포와 관계없이 정규 분포에 가까워지며, 그 분산이 작아져 더 좁아집니다.** (중심 극한 정리)"
 )
 
 sample_means = []
@@ -57,10 +59,18 @@ std_error_of_mean = population_std / np.sqrt(sample_size)
 st.write(f"**표본 평균의 평균**: {mean_of_sample_means:.2f}")
 st.write(f"**표본 평균의 표준편차 (표준오차)**: {std_error_of_mean:.2f}")
 
+# 표본 평균 분포의 x축 범위를 고정하여 분산 변화를 시각적으로 명확하게 보여줍니다.
+# 모평균이 0에서 100까지, 모표준편차가 1에서 30까지 변하는 것을 고려하여 충분히 넓은 범위를 설정합니다.
+# 최대 표준오차(모표준편차 30, 표본크기 5)는 약 13.4입니다.
+# [-50, 150] 범위는 0-100 사이의 모평균에서 대략 ±3.7 표준오차를 포함하는 넓은 범위입니다.
+fixed_x_min_sampling = -50
+fixed_x_max_sampling = 150
+
 fig_sample_means.update_layout(title="표본 평균의 분포 (샘플링 분포)",
                                xaxis_title="표본 평균",
                                yaxis_title="빈도",
-                               height=400)
+                               height=400,
+                               xaxis_range=[fixed_x_min_sampling, fixed_x_max_sampling]) # 고정된 x축 범위 적용
 st.plotly_chart(fig_sample_means, use_container_width=True)
 
 st.header("3. 신뢰구간")
@@ -110,6 +120,7 @@ fig_confidence_interval.add_trace(go.Scatter(
 ))
 fig_confidence_interval.add_vline(x=population_mean, line_dash="dash", line_color="green", annotation_text=f"모평균 = {population_mean:.2f}")
 
+# 신뢰구간 그래프는 계산된 구간 자체를 명확하게 보여주기 위해 x축 범위를 동적으로 유지합니다.
 fig_confidence_interval.update_layout(title=f"하나의 표본에서 계산된 {confidence_level}% 신뢰구간",
                                        xaxis_title="값",
                                        yaxis_title="",
@@ -133,7 +144,10 @@ for i in range(num_ci_samples):
     sample_mean = np.mean(sample)
     sample_std = np.std(sample, ddof=1)
 
-    t_critical_ci = stats.t.ppf(1 - alpha / 2, degrees_freedom)
+    degrees_freedom_ci = sample_size - 1
+    alpha_ci = 1 - (confidence_level / 100)
+    t_critical_ci = stats.t.ppf(1 - alpha_ci / 2, degrees_freedom_ci)
+
     margin_of_error_ci = t_critical_ci * (sample_std / np.sqrt(sample_size))
     ci_lower = sample_mean - margin_of_error_ci
     ci_upper = sample_mean + margin_of_error_ci
@@ -166,12 +180,23 @@ for i, ci in enumerate(ci_data):
         showlegend=False
     ))
 
+# 여러 신뢰구간 그래프 역시 각 구간의 명확한 표현을 위해 동적 x축 범위를 사용합니다.
+# 다만, 모든 구간이 잘 보이도록 계산된 구간의 최소/최대 값에 기반하여 범위를 조정합니다.
+if ci_data: # ci_data가 비어있지 않은 경우에만 계산
+    all_ci_points = [point['lower'] for point in ci_data] + [point['upper'] for point in ci_data]
+    ci_plot_x_min = min(all_ci_points) - (max(all_ci_points) - min(all_ci_points)) * 0.1 # 10% 버퍼
+    ci_plot_x_max = max(all_ci_points) + (max(all_ci_points) - min(all_ci_points)) * 0.1 # 10% 버퍼
+else: # ci_data가 비어있으면 기본 범위 설정
+    ci_plot_x_min = population_mean - 20
+    ci_plot_x_max = population_mean + 20
+
 fig_multi_ci.add_vline(x=population_mean, line_dash="dash", line_color="blue", annotation_text="모평균")
 fig_multi_ci.update_layout(title="여러 표본에 대한 신뢰구간",
                            xaxis_title="값",
                            yaxis_title="표본 번호",
                            height=min(600, num_ci_samples * 20 + 100),
-                           showlegend=False)
+                           showlegend=False,
+                           xaxis_range=[ci_plot_x_min, ci_plot_x_max]) # 동적 x축 범위 적용
 st.plotly_chart(fig_multi_ci, use_container_width=True)
 
 st.write(f"**모평균을 포함하는 신뢰구간의 수**: {contained_count} / {num_ci_samples}")
