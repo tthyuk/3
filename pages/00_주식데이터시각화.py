@@ -96,7 +96,18 @@ if not stock_data.empty:
             hover_name="variable" # 마우스 오버 시 기업 이름 표시
         )
         # 마우스 오버 시 모든 라인 정보 표시
-        fig_normalized.update_layout(hovermode="x unified")
+        fig_normalized.update_layout(
+            hovermode="x unified",
+            height=600, # 차트 높이 증가
+            legend=dict(
+                orientation="v", # 범례를 수직으로 정렬
+                xanchor="left",  # x축 앵커를 왼쪽으로 설정
+                x=1.02,          # 차트 영역 바깥, 오른쪽에 위치 (여백 추가)
+                yanchor="top",   # y축 앵커를 위쪽으로 설정
+                y=1              # 차트 영역 상단에 위치
+            ),
+            margin=dict(l=0, r=180, t=30, b=0) # 오른쪽 여백을 늘려 범례 공간 확보
+        )
         # Streamlit에 Plotly 차트 표시 (컨테이너 너비에 맞춤)
         st.plotly_chart(fig_normalized, use_container_width=True)
 
@@ -110,7 +121,18 @@ if not stock_data.empty:
             labels={"value": "종가", "index": "날짜", "variable": "기업"},
             hover_name="variable"
         )
-        fig_raw.update_layout(hovermode="x unified")
+        fig_raw.update_layout(
+            hovermode="x unified",
+            height=600, # 차트 높이 증가
+            legend=dict(
+                orientation="v", # 범례를 수직으로 정렬
+                xanchor="left",  # x축 앵커를 왼쪽으로 설정
+                x=1.02,          # 차트 영역 바깥, 오른쪽에 위치 (여백 추가)
+                yanchor="top",   # y축 앵커를 위쪽으로 설정
+                y=1              # 차트 영역 상단에 위치
+            ),
+            margin=dict(l=0, r=180, t=30, b=0) # 오른쪽 여백을 늘려 범례 공간 확보
+        )
         st.plotly_chart(fig_raw, use_container_width=True)
 
         # --- 개별 기업 주가 데이터 보기 ---
@@ -120,13 +142,24 @@ if not stock_data.empty:
 
         if selected_company_name:
             # 선택된 기업명에 해당하는 티커를 찾음
-            # .get()을 사용하여 안전하게 티커를 가져오도록 변경
             selected_ticker = next((ticker for ticker, name in TICKERS.items() if name == selected_company_name), None)
 
             if selected_ticker and selected_company_name in close_prices.columns:
                 st.write(f"**{selected_company_name} 주가 데이터 (최근 3년 종가):**")
-                # 선택된 기업의 종가만 차트로 표시 (컬럼 이름이 이미 변경되었으므로 selected_company_name 사용)
-                st.line_chart(close_prices[selected_company_name])
+                # 선택된 기업의 종가 Series를 DataFrame으로 변환
+                individual_df = pd.DataFrame(close_prices[selected_company_name])
+                
+                # plotly.express.line을 사용하여 개별 기업 차트 생성
+                fig_individual = px.line(
+                    individual_df,
+                    x=individual_df.index,
+                    y=individual_df.columns[0], # 단일 컬럼의 이름 (기업명)
+                    title=f"{selected_company_name} 주가",
+                    labels={"value": "종가", "index": "날짜"},
+                )
+                fig_individual.update_layout(hovermode="x unified")
+                st.plotly_chart(fig_individual, use_container_width=True)
+
                 st.write(f"**{selected_company_name} 원본 데이터 (상위 5개 행):**")
                 # 원본 stock_data는 티커를 키로 사용하므로 selected_ticker를 사용
                 st.dataframe(stock_data[selected_ticker].head())
