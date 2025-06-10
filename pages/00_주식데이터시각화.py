@@ -142,27 +142,47 @@ if not stock_data.empty:
 
             if selected_ticker and selected_company_name in close_prices.columns:
                 st.write(f"**{selected_company_name} 주가 데이터 (최근 3년 종가):**")
+                
                 # 선택된 기업의 종가 Series를 DataFrame으로 변환
-                # plotly.express에서 trendline을 사용할 때 datetime index와 관련된 TypeError를 방지하기 위해
-                # index를 리셋하고, 컬럼 이름을 명확히 지정하여 사용합니다.
                 individual_df = pd.DataFrame(close_prices[selected_company_name]).reset_index()
-                individual_df.columns = ['Date', 'Close'] # 컬럼 이름을 'Date'와 'Close'로 변경
+                individual_df.columns = ['Date', 'Close']
+                # 'Date' 컬럼이 datetime 타입임을 명확히 합니다.
+                individual_df['Date'] = pd.to_datetime(individual_df['Date']) 
+
+                # 추세선 계산을 위해 날짜를 숫자로 변환한 새로운 컬럼을 추가합니다. (예: Julian Date)
+                individual_df['Date_Ordinal'] = individual_df['Date'].apply(lambda date: date.toordinal())
 
                 # plotly.express.line을 사용하여 개별 기업 차트 생성
                 # trendline='ols'를 추가하여 추세선 표현
+                # x축에는 추세선 계산을 위한 숫자 값인 'Date_Ordinal'을 사용합니다.
                 fig_individual = px.line(
                     individual_df,
-                    x='Date', # 이제 'Date' 컬럼 사용
-                    y='Close', # 이제 'Close' 컬럼 사용
+                    x='Date_Ordinal', 
+                    y='Close',
                     title=f"{selected_company_name} 주가",
-                    labels={"Close": "종가", "Date": "날짜"}, # 변경된 컬럼 이름에 맞춰 레이블 업데이트
+                    labels={"Close": "종가"}, # 'Date_Ordinal'은 나중에 x축 텍스트로 대체될 것이므로 여기서 레이블 제거
                     trendline='ols' # 추세선 추가
                 )
-                fig_individual.update_layout(hovermode="x unified")
+
+                # x축에 실제 날짜를 표시하기 위해 tickvals와 ticktext를 수동으로 설정합니다.
+                tickvals = individual_df['Date_Ordinal'].tolist()
+                ticktext = individual_df['Date'].dt.strftime('%Y-%m-%d').tolist()
+
+                # 데이터 포인트가 적을 경우 tick sampling step을 조정합니다.
+                step = len(tickvals) // 5 if len(tickvals) > 5 else 1
+                
+                fig_individual.update_layout(
+                    hovermode="x unified",
+                    xaxis=dict(
+                        tickmode='array',
+                        tickvals=tickvals[::step], # 눈금 위치
+                        ticktext=ticktext[::step], # 눈금 텍스트 (날짜)
+                        title="날짜" # x축 레이블
+                    )
+                )
                 st.plotly_chart(fig_individual, use_container_width=True)
 
                 st.write(f"**{selected_company_name} 원본 데이터 (상위 5개 행):**")
-                # 원본 stock_data는 티커를 키로 사용하므로 selected_ticker를 사용
                 st.dataframe(stock_data[selected_ticker].head())
             else:
                 st.info(f"선택하신 '{selected_company_name}'의 주가 데이터를 찾을 수 없습니다. 티커를 확인해주세요.")
