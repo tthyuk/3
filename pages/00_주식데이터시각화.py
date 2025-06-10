@@ -98,7 +98,7 @@ if not stock_data.empty:
         # 마우스 오버 시 모든 라인 정보 표시
         fig_normalized.update_layout(
             hovermode="x unified",
-            height=600, # 차트 높이 증가
+            # height=600, # 차트 높이 증가 설정 제거
             legend=dict(
                 orientation="v", # 범례를 수직으로 정렬
                 xanchor="left",  # x축 앵커를 왼쪽으로 설정
@@ -123,7 +123,7 @@ if not stock_data.empty:
         )
         fig_raw.update_layout(
             hovermode="x unified",
-            height=600, # 차트 높이 증가
+            # height=600, # 차트 높이 증가 설정 제거
             legend=dict(
                 orientation="v", # 범례를 수직으로 정렬
                 xanchor="left",  # x축 앵커를 왼쪽으로 설정
