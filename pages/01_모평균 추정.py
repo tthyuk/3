@@ -74,7 +74,7 @@ with col2:
     st.markdown(f"""
     이 그래프는 모집단에서 **표본을 {num_samples}번 추출**하여 얻은 **표본 평균들의 분포**를 보여줍니다.
     **중심극한정리**에 따르면, 표본의 크기($n$)가 충분히 커질수록 표본 평균들의 분포는 모집단의 분포와 상관없이 **정규분포**에 가까워지며,
-    그 평균은 모집단 평균($\\mu$)과 같아지고, 표준편차는 $\\sigma / \\sqrt{n}$이 됩니다.
+    그 평균은 모집단 평균($\\mu$)과 같아지고, 표준편차는 $\\sigma / \\sqrt{{n}}$이 됩니다.
     """)
     st.markdown(f"**관찰:** 표본 평균들의 평균($\\bar{{\\bar{{X}}}} \\approx {np.mean(sample_means):.2f}$)이 모집단 평균($\\mu = {population_mean}$)에 가까워지는 것을 확인할 수 있습니다.")
     st.markdown(f"**이론적인 표본 평균의 표준편차 (표준오차):** $\\sigma / \\sqrt{{n}} = {population_std} / \\sqrt{{{sample_size}}} \\approx {(population_std / np.sqrt(sample_size)):.2f}$")
