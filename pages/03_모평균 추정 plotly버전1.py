@@ -33,9 +33,8 @@ fig_population = go.Figure(data=go.Scatter(x=x_population, y=y_population, mode=
 fig_population.update_layout(title="모집단 정규 분포",
                              xaxis_title="값",
                              yaxis_title="확률 밀도",
-                             height=400)
-# 모집단 분포는 사용자가 설정한 모수(모평균, 모표준편차)에 따라 범위가 변하는 것이 자연스러움.
-# 따라서 x축 범위를 고정하지 않고 동적으로 유지합니다.
+                             height=400,
+                             xaxis_range=[-50, 150]) # 모집단 분포의 x축 범위를 고정
 st.plotly_chart(fig_population, use_container_width=True)
 
 st.header("2. 표본 추출 및 표본 평균 분포 (중심 극한 정리)")
