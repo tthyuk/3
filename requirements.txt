@@ -3,3 +3,6 @@ streamlit-folium
 yfinance
 pandas
 plotly
+numpy
+matplotlib
+scipy
