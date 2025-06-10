@@ -60,11 +60,9 @@ st.write(f"**표본 평균의 평균**: {mean_of_sample_means:.2f}")
 st.write(f"**표본 평균의 표준편차 (표준오차)**: {std_error_of_mean:.2f}")
 
 # 표본 평균 분포의 x축 범위를 고정하여 분산 변화를 시각적으로 명확하게 보여줍니다.
-# 모평균이 0에서 100까지, 모표준편차가 1에서 30까지 변하는 것을 고려하여 충분히 넓은 범위를 설정합니다.
-# 최대 표준오차(모표준편차 30, 표본크기 5)는 약 13.4입니다.
-# [-50, 150] 범위는 0-100 사이의 모평균에서 대략 ±3.7 표준오차를 포함하는 넓은 범위입니다.
-fixed_x_min_sampling = -50
-fixed_x_max_sampling = 150
+# 이제 x축 범위는 25에서 75사이로 고정됩니다.
+fixed_x_min_sampling = 25
+fixed_x_max_sampling = 75
 
 fig_sample_means.update_layout(title="표본 평균의 분포 (샘플링 분포)",
                                xaxis_title="표본 평균",
