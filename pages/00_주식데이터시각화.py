@@ -107,7 +107,6 @@ if not stock_data.empty:
             ),
             margin=dict(l=0, r=180, t=30, b=0) # 오른쪽 여백을 늘려 범례 공간 확보
         )
-        # Streamlit에 Plotly 차트 표시 (컨테이너 너비에 맞춤)
         st.plotly_chart(fig_normalized, use_container_width=True)
 
         # --- 실제 주가 (종가) 시각화 ---
