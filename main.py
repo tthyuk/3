@@ -75,6 +75,19 @@ attractions = [
 # 지도 생성
 m = folium.Map(location=SPAIN_COORDINATES, zoom_start=6)
 
+# 국가 경계 GeoJson 추가
+geojson_url = "https://raw.githubusercontent.com/python-visualization/folium-example-data/main/world_countries.json"
+style_function = lambda x: {
+    'fillColor': 'transparent', # 국가 내부 색상 없음
+    'color': 'black',          # 경계선 색상
+    'weight': 1,               # 경계선 두께
+}
+folium.GeoJson(
+    geojson_url,
+    style_function=style_function
+).add_to(m)
+
+
 # 마커 추가
 for attraction in attractions:
     folium.Marker(
