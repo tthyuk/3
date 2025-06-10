@@ -149,34 +149,34 @@ if not stock_data.empty:
                 # 'Date' 컬럼이 datetime 타입임을 명확히 합니다.
                 individual_df['Date'] = pd.to_datetime(individual_df['Date']) 
 
-                # 추세선 계산을 위해 날짜를 숫자로 변환한 새로운 컬럼을 추가합니다. (예: Julian Date)
-                individual_df['Date_Ordinal'] = individual_df['Date'].apply(lambda date: date.toordinal())
+                # 추세선 계산을 위해 날짜를 숫자로 변환한 새로운 컬럼을 추가합니다. (예: 0부터 시작하는 순차적인 인덱스)
+                individual_df['Numerical_Index'] = range(len(individual_df))
 
                 # plotly.express.line을 사용하여 개별 기업 차트 생성
                 # trendline='ols'를 추가하여 추세선 표현
-                # x축에는 추세선 계산을 위한 숫자 값인 'Date_Ordinal'을 사용합니다.
+                # x축에는 추세선 계산을 위한 숫자 값인 'Numerical_Index'를 사용합니다.
                 fig_individual = px.line(
                     individual_df,
-                    x='Date_Ordinal', 
+                    x='Numerical_Index', 
                     y='Close',
                     title=f"{selected_company_name} 주가",
-                    labels={"Close": "종가"}, # 'Date_Ordinal'은 나중에 x축 텍스트로 대체될 것이므로 여기서 레이블 제거
+                    labels={"Close": "종가", "Numerical_Index": "날짜"}, # 호버 시 표시될 레이블 설정
                     trendline='ols' # 추세선 추가
                 )
 
                 # x축에 실제 날짜를 표시하기 위해 tickvals와 ticktext를 수동으로 설정합니다.
-                tickvals = individual_df['Date_Ordinal'].tolist()
-                ticktext = individual_df['Date'].dt.strftime('%Y-%m-%d').tolist()
+                tickvals_for_display = individual_df['Numerical_Index'].tolist()
+                ticktext_for_display = individual_df['Date'].dt.strftime('%Y-%m-%d').tolist()
 
                 # 데이터 포인트가 적을 경우 tick sampling step을 조정합니다.
-                step = len(tickvals) // 5 if len(tickvals) > 5 else 1
+                step = max(1, len(tickvals_for_display) // 5) # 최소 1을 보장하여 ZeroDivisionError 방지
                 
                 fig_individual.update_layout(
                     hovermode="x unified",
                     xaxis=dict(
                         tickmode='array',
-                        tickvals=tickvals[::step], # 눈금 위치
-                        ticktext=ticktext[::step], # 눈금 텍스트 (날짜)
+                        tickvals=tickvals_for_display[::step], # 눈금 위치
+                        ticktext=ticktext_for_display[::step], # 눈금 텍스트 (날짜)
                         title="날짜" # x축 레이블
                     )
                 )
@@ -191,3 +191,4 @@ if not stock_data.empty:
         st.error("선택된 기업들의 유효한 주가 데이터를 가져오는 데 실패했습니다. 티커 리스트를 확인하거나, 데이터가 존재하지 않을 수 있습니다.")
 else:
     st.error("주가 데이터를 가져오는 데 실패했습니다. 인터넷 연결 상태나 티커 리스트가 올바른지 확인해주세요.")
+
