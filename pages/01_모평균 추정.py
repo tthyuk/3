@@ -76,8 +76,8 @@ with col2:
     **중심극한정리**에 따르면, 표본의 크기($n$)가 충분히 커질수록 표본 평균들의 분포는 모집단의 분포와 상관없이 **정규분포**에 가까워지며,
     그 평균은 모집단 평균($\\mu$)과 같아지고, 표준편차는 $\\sigma / \\sqrt{n}$이 됩니다.
     """)
-    st.markdown(f"**관찰:** 표본 평균들의 평균($\\bar{\\bar{X}} \\approx {np.mean(sample_means):.2f}$)이 모집단 평균($\\mu = {population_mean}$)에 가까워지는 것을 확인할 수 있습니다.")
-    st.markdown(f"**이론적인 표본 평균의 표준편차 (표준오차):** $\\sigma / \\sqrt{n} = {population_std} / \\sqrt{{{sample_size}}} \\approx {(population_std / np.sqrt(sample_size)):.2f}$")
+    st.markdown(f"**관찰:** 표본 평균들의 평균($\\bar{{\\bar{{X}}}} \\approx {np.mean(sample_means):.2f}$)이 모집단 평균($\\mu = {population_mean}$)에 가까워지는 것을 확인할 수 있습니다.")
+    st.markdown(f"**이론적인 표본 평균의 표준편차 (표준오차):** $\\sigma / \\sqrt{{n}} = {population_std} / \\sqrt{{{sample_size}}} \\approx {(population_std / np.sqrt(sample_size)):.2f}$")
     st.markdown(f"**실제 표본 평균들의 표준편차:** ${np.std(sample_means):.2f}$")
 
 st.markdown("---")
@@ -124,7 +124,7 @@ st.markdown(f"""
 
 **신뢰구간 계산:**
 * **신뢰수준:** ${confidence_level}\\%$
-* **임계값 (Z-값):** ${z_critical:.2f}$ (신뢰수준 ${confidence_level}\%$에 해당하는 양측 Z-값)
+* **임계값 (Z-값):** ${z_critical:.2f}$ (신뢰수준 ${confidence_level}\\%$에 해당하는 양측 Z-값)
 * **표준오차 (Standard Error):** $\\sigma / \\sqrt{{n}} = {population_std} / \\sqrt{{{sample_size}}} = {(population_std / np.sqrt(sample_size)):.2f}$
 * **오차 한계 (Margin of Error):** 임계값 $\\times$ 표준오차 = ${z_critical:.2f} \\times {(population_std / np.sqrt(sample_size)):.2f} = {margin_of_error:.2f}$
 
