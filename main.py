@@ -10,23 +10,28 @@ def main():
     # st.session_state는 Streamlit 앱의 상태를 저장하고 관리하는 데 사용됩니다.
     # 앱이 리로드되거나 버튼이 클릭되어도 이 변수들의 값은 유지됩니다.
 
-    # max_students를 1로 초기화하여 st.number_input의 min_value 오류를 방지합니다.
+    # 세션 상태 변수들을 의존성 없이 먼저 초기화합니다.
     if 'max_students' not in st.session_state:
-        st.session_state.max_students = 1 # 변경: 초기값을 0에서 1로 변경
-
-    # available_numbers를 현재 max_students 값에 따라 초기화합니다.
-    # 이는 앱이 처음 로드될 때와 max_students가 변경되었을 때 모두 적용됩니다.
-    if 'available_numbers' not in st.session_state or \
-       len(st.session_state.available_numbers) == 0 and st.session_state.max_students > 0 and \
-       st.session_state.max_students != len(st.session_state.drawn_numbers) + len(st.session_state.available_numbers):
-        # available_numbers가 비어있고, max_students가 유효하며,
-        # 현재 전체 학생수와 뽑힌/남은 학생수의 합이 맞지 않을 경우에만 재초기화
-        if not st.session_state.drawn_numbers: # 뽑힌 번호가 없으면 완전히 재초기화
-            st.session_state.available_numbers = list(range(1, st.session_state.max_students + 1))
-        # else: 일부 뽑힌 상태에서 리프레시 시, 남은 번호는 그대로 유지
+        st.session_state.max_students = 1 # 변경: 초기값을 0에서 1로 변경하여 min_value 오류 방지
 
     if 'drawn_numbers' not in st.session_state:
         st.session_state.drawn_numbers = []
+
+    # available_numbers는 다른 변수들의 초기화 후, 그 값들에 따라 초기화될 수 있습니다.
+    # 이는 앱이 처음 로드될 때와 max_students가 변경되었을 때 모두 적용됩니다.
+    # available_numbers가 세션에 없거나, 현재 학생 수와 뽑힌/남은 학생 수의 합이 맞지 않을 때만 재초기화
+    # len(st.session_state.available_numbers) == 0 and st.session_state.max_students > 0
+    # 이 조건은 available_numbers가 비어있고, max_students가 유효한 경우를 의미합니다.
+    # st.session_state.max_students != len(st.session_state.drawn_numbers) + len(st.session_state.available_numbers)
+    # 이 조건은 현재 설정된 총 학생 수와 실제 뽑혔거나 남아있는 학생 수의 합이 일치하지 않을 때 재초기화합니다.
+    if 'available_numbers' not in st.session_state or \
+       (len(st.session_state.available_numbers) == 0 and st.session_state.max_students > 0) or \
+       (st.session_state.max_students != len(st.session_state.drawn_numbers) + len(st.session_state.available_numbers)):
+        # 뽑힌 번호가 없으면 (즉, 완전히 새로운 시작이거나 초기화된 상태) available_numbers를 완전히 재초기화
+        if not st.session_state.drawn_numbers:
+            st.session_state.available_numbers = list(range(1, st.session_state.max_students + 1))
+        # else: 일부 뽑힌 상태에서 리프레시 시, 남은 번호는 그대로 유지되도록 합니다. (현재 로직에서는 명시적인 else 로직 없음)
+
 
     # 총 학생 수를 입력받는 숫자 입력 필드를 생성합니다.
     # min_value는 최소값, value는 초기값, step은 증가/감소 단위를 설정합니다.
