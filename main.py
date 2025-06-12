@@ -67,19 +67,18 @@ def main():
 
     # 룰렛을 렌더링하는 함수를 정의합니다.
     # 이 함수는 룰렛의 HTML/CSS와 함께 현재 표시될 숫자를 포함하여 룰렛을 그립니다.
-    def render_roulette_visual(numbers, current_rotation, highlighted_number=None):
+    def render_roulette_visual(current_available_numbers, current_rotation, highlighted_number=None):
         # 룰렛 바퀴의 반지름 (CSS px 값)
         wheel_radius_css = 125 # .roulette-wheel width/2
-        
-        if not numbers or st.session_state.max_students == 0:
-            # 학생 수가 0일 경우 메시지 표시
-            segment_html = "<div class='roulette-no-numbers'>학생 수를 입력하세요.</div>"
-            # 룰렛 바퀴는 회전하지 않고, 메시지만 표시합니다.
+        container_size = 350 # .roulette-container width/height
+
+        if not current_available_numbers:
+            segment_html = "<div class='roulette-no-numbers'>추첨할 번호가 없습니다. 학생 수를 입력하거나 룰렛을 초기화하세요.</div>"
             wheel_html = f"<div class='roulette-wheel' style='transform: rotate(0deg);'>{segment_html}</div>"
         else:
-            total_segments = st.session_state.max_students # 전체 초기 학생 수 (칸 수 고정)
-            segment_angle = 360 / total_segments # 각 칸의 각도
-            
+            num_active_segments = len(current_available_numbers)
+            segment_angle = 360 / num_active_segments # 각 칸의 각도
+
             # 시각적 구분을 위한 색상 팔레트
             segment_colors = [
                 "#FFD700", "#FF6347", "#6A5ACD", "#32CD32", "#8A2BE2",
@@ -91,24 +90,25 @@ def main():
             ] # 다양한 색상 추가 (최대 30개)
 
             segments_html = []
-            # 모든 가능한 번호(1부터 max_students까지)를 기준으로 세그먼트를 생성합니다.
-            all_possible_numbers = list(range(1, st.session_state.max_students + 1))
-
-            # 세그먼트 (숫자 칸)의 크기 및 룰렛 중앙으로부터의 거리
-            segment_width = 80  # 세그먼트의 시각적 너비 (px)
-            segment_height = 40 # 세그먼트의 시각적 높이 (px)
+            segment_width = 80
+            segment_height = 40
             # 숫자가 위치할 반지름 (룰렛 중앙에서 세그먼트 중앙까지의 거리)
-            # 룰렛 바퀴 반지름(125px)에서 세그먼트 높이의 절반 정도를 빼서 조정
-            number_radial_distance = wheel_radius_css - (segment_height / 2) - 10 # 룰렛 테두리 안쪽으로 배치
+            number_radial_distance = wheel_radius_css - (segment_height / 2) - 10
 
-            for i, num in enumerate(all_possible_numbers):
-                # 각 세그먼트의 중심이 룰렛의 12시 방향(0도)에서 시작하여 시계 방향으로 회전하는 각도
-                segment_center_angle = (i * segment_angle) # 0번 인덱스가 0도에 위치
+            # 현재 추첨 가능한 번호들을 정렬하여 시각적 순서를 일관되게 유지합니다.
+            sorted_available_numbers = sorted(current_available_numbers)
 
+            for i, num in enumerate(sorted_available_numbers):
+                # 각 세그먼트의 시작 각도 (0번 인덱스가 0도에 위치)
+                segment_start_angle = i * segment_angle
+
+                # 세그먼트 중앙에 텍스트가 똑바로 보이도록 보정하기 위한 회전 각도
                 # CSS `transform: rotate()`는 시계 방향이 양수입니다.
                 # `math.cos`와 `math.sin`을 사용할 때 0도는 X축 양의 방향(오른쪽)이므로,
                 # 룰렛의 0도를 Y축 양의 방향(위쪽)으로 맞추기 위해 -90도를 보정합니다.
-                angle_rad_for_pos = math.radians(segment_center_angle - 90)
+                # 그리고 세그먼트의 중심 위치를 계산하기 위해 세그먼트 시작 각도에 텍스트를 중앙에 오게 하는 보정 각도 (segment_angle / 2)를 더합니다.
+                angle_for_positioning = segment_start_angle + (segment_angle / 2)
+                angle_rad_for_pos = math.radians(angle_for_positioning - 90)
 
                 # 룰렛 중심(0,0)을 기준으로 세그먼트 중심의 X, Y 좌표 계산
                 x_pos = number_radial_distance * math.cos(angle_rad_for_pos)
@@ -119,15 +119,13 @@ def main():
                 segment_left = wheel_radius_css + x_pos - (segment_width / 2)
                 segment_top = wheel_radius_css + y_pos - (segment_height / 2)
 
-                is_drawn = num in st.session_state.drawn_numbers
                 color_index = i % len(segment_colors)
-                segment_bg_color = segment_colors[color_index] if not is_drawn else "#D3D3D3" # 뽑힌 번호는 회색 배경
-                text_color = "black" if not is_drawn else "#696969" # 뽑힌 번호는 어두운 회색 텍스트
-                font_weight = "normal" if not is_drawn else "normal"
+                segment_bg_color = segment_colors[color_index]
+                text_color = "black"
 
-                # 룰렛 바퀴의 회전(current_rotation)에 따라 세그먼트도 같이 회전하지만,
+                # 룰렛 바퀴의 회전에 따라 세그먼트도 같이 회전하지만,
                 # 세그먼트 안의 숫자는 항상 똑바로 보이도록 세그먼트의 회전 각도에 반대되는 각도로 회전시킵니다.
-                content_rotate_angle = -segment_center_angle
+                content_rotate_angle = -angle_for_positioning
 
                 segments_html.append(f"""
                 <div class='roulette-segment' style='
@@ -136,14 +134,14 @@ def main():
                     top: {segment_top}px;
                     width: {segment_width}px;
                     height: {segment_height}px;
-                    transform: rotate({segment_center_angle}deg); /* 세그먼트 자체를 방사형 위치에 회전 */
+                    transform: rotate({angle_for_positioning}deg); /* 세그먼트 자체를 방사형 위치에 회전 */
                     position: absolute;
                     display: flex;
                     justify-content: center;
                     align-items: center;
                     font-size: 1.2em;
                     color: {text_color};
-                    font-weight: {font_weight};
+                    font-weight: normal;
                     border: 1px solid rgba(255,255,255,0.2);
                     box-sizing: border-box;
                     border-radius: 5px; /* 약간 둥근 모서리 */
@@ -174,8 +172,8 @@ def main():
             justify-content: center;
             align-items: center;
             position: relative;
-            width: 350px; /* 룰렛 컨테이너 크기 더 키움 */
-            height: 350px; /* 룰렛 컨테이너 크기 더 키움 */
+            width: {container_size}px; /* 룰렛 컨테이너 크기 더 키움 */
+            height: {container_size}px; /* 룰렛 컨테이너 크기 더 키움 */
             margin: 30px auto;
             border-radius: 50%;
             background-color: #f0f2f6; /* 배경색 */
@@ -184,8 +182,8 @@ def main():
         }}
 
         .roulette-wheel {{
-            width: 250px; /* 룰렛 바퀴 크기 키움 */
-            height: 250px; /* 룰렛 바퀴 크기 키움 */
+            width: {2 * wheel_radius_css}px; /* 룰렛 바퀴 크기 키움 */
+            height: {2 * wheel_radius_css}px; /* 룰렛 바퀴 크기 키움 */
             border-radius: 50%;
             border: 15px solid #333; /* 테두리 두께 키움 */
             box-shadow: 0 0 20px rgba(0,0,0,0.6); /* 그림자 강화 */
@@ -269,13 +267,18 @@ def main():
                 random_extra_spins = random.randint(3, 5)
 
                 # 최종 각도 계산: 뽑힌 번호가 포인터(상단 중앙)에 오도록
-                total_segments_for_calc = st.session_state.max_students # 전체 초기 번호 수 (각도 계산용)
-                segment_angle_val = 360 / total_segments_for_calc if total_segments_for_calc > 0 else 0
+                # 현재 available_numbers 리스트 내에서 drawn_number의 인덱스를 찾습니다.
+                # (룰렛 칸은 available_numbers에 따라 동적으로 생성되므로, 이 인덱스를 사용해야 합니다.)
+                sorted_available_numbers = sorted(st.session_state.available_numbers)
+                drawn_number_index_in_current_list = sorted_available_numbers.index(drawn_number)
 
-                # 뽑힌 번호의 중심이 0도(상단 포인터)에 오도록 할 최종 각도 계산
-                # (drawn_number - 1)은 0부터 시작하는 인덱스
+                num_segments_for_calc = len(sorted_available_numbers)
+                segment_angle_val = 360 / num_segments_for_calc if num_segments_for_calc > 0 else 0
+
+                # 뽑힌 번호의 세그먼트 중심이 0도(상단 포인터)에 오도록 할 최종 각도 계산
+                # (drawn_number_index_in_current_list)는 0부터 시작하는 인덱스
                 # target_center_angle: 뽑힌 번호의 세그먼트 중심이 룰렛의 상단(0도)에서 시계 방향으로 얼마나 떨어져 있는지
-                target_center_angle = ((drawn_number - 1) * segment_angle_val + (segment_angle_val / 2)) % 360
+                target_center_angle = (drawn_number_index_in_current_list * segment_angle_val + (segment_angle_val / 2)) % 360
                 
                 # 룰렛을 회전시켜 target_center_angle이 0도에 오도록 할 목표 회전 각도 (0-360 범위)
                 # CSS rotate는 시계 방향이 양수이므로, 0도에 위치시키려면 (360 - 현재 각도)만큼 더 회전해야 합니다.
@@ -305,10 +308,16 @@ def main():
                             display_num = "---" # 뽑을 번호가 없으면 --- 표시
 
                         # 룰렛 시각화 업데이트 (회전 각도와 임시 번호 전달)
+                        # 여기서는 available_numbers가 아직 업데이트되지 않았으므로 현재 세션 상태의 available_numbers를 사용합니다.
                         render_roulette_visual(st.session_state.available_numbers, current_spin_rotation, display_num)
                         time.sleep(sleep_per_frame)
 
+                # 실제 번호 리스트에서 뽑힌 번호를 제거하고 기록합니다.
+                st.session_state.available_numbers.remove(drawn_number)
+                st.session_state.drawn_numbers.append(drawn_number)
+
                 # 최종 당첨 번호를 룰렛 중앙에 표시하고 색상 및 크기를 고정합니다.
+                # 여기서는 available_numbers가 업데이트된 후의 상태를 전달하여 룰렛이 새로운 칸 수로 렌더링되도록 합니다.
                 render_roulette_visual(st.session_state.available_numbers, final_rotation, drawn_number)
                 st.session_state.current_rotation = final_rotation # 다음 룰렛을 위해 최종 각도 저장
 
@@ -329,7 +338,8 @@ def main():
             st.session_state.roulette_display_number = "---" # 초기화 시 룰렛 숫자도 초기화
             st.session_state.current_rotation = 0 # 초기화 시 회전 각도 초기화
             st.info("룰렛이 초기화되었습니다.")
-            render_roulette_visual(st.session_state.available_numbers, st.session_state.current_rotation) # 초기 상태 룰렛 렌더링
+            # 초기화된 상태의 룰렛을 렌더링합니다.
+            render_roulette_visual(st.session_state.available_numbers, st.session_state.current_rotation)
             st.rerun()
 
 # 이 스크립트가 직접 실행될 때 main 함수를 호출합니다.
