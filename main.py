@@ -9,15 +9,24 @@ def main():
     # 세션 상태(session state)를 초기화합니다.
     # st.session_state는 Streamlit 앱의 상태를 저장하고 관리하는 데 사용됩니다.
     # 앱이 리로드되거나 버튼이 클릭되어도 이 변수들의 값은 유지됩니다.
-    if 'available_numbers' not in st.session_state:
-        # 아직 뽑히지 않은 번호들을 저장할 리스트입니다.
-        st.session_state.available_numbers = []
-    if 'drawn_numbers' not in st.session_state:
-        # 이미 뽑힌 번호들을 순서대로 저장할 리스트입니다.
-        st.session_state.drawn_numbers = []
+
+    # max_students를 1로 초기화하여 st.number_input의 min_value 오류를 방지합니다.
     if 'max_students' not in st.session_state:
-        # 사용자가 입력한 총 학생 수를 저장합니다.
-        st.session_state.max_students = 0
+        st.session_state.max_students = 1 # 변경: 초기값을 0에서 1로 변경
+
+    # available_numbers를 현재 max_students 값에 따라 초기화합니다.
+    # 이는 앱이 처음 로드될 때와 max_students가 변경되었을 때 모두 적용됩니다.
+    if 'available_numbers' not in st.session_state or \
+       len(st.session_state.available_numbers) == 0 and st.session_state.max_students > 0 and \
+       st.session_state.max_students != len(st.session_state.drawn_numbers) + len(st.session_state.available_numbers):
+        # available_numbers가 비어있고, max_students가 유효하며,
+        # 현재 전체 학생수와 뽑힌/남은 학생수의 합이 맞지 않을 경우에만 재초기화
+        if not st.session_state.drawn_numbers: # 뽑힌 번호가 없으면 완전히 재초기화
+            st.session_state.available_numbers = list(range(1, st.session_state.max_students + 1))
+        # else: 일부 뽑힌 상태에서 리프레시 시, 남은 번호는 그대로 유지
+
+    if 'drawn_numbers' not in st.session_state:
+        st.session_state.drawn_numbers = []
 
     # 총 학생 수를 입력받는 숫자 입력 필드를 생성합니다.
     # min_value는 최소값, value는 초기값, step은 증가/감소 단위를 설정합니다.
@@ -39,6 +48,8 @@ def main():
         # drawn_numbers는 비워줍니다.
         st.session_state.drawn_numbers = []
         st.success(f"✅ 룰렛이 **{st.session_state.max_students}명**의 학생으로 초기화되었습니다. 이제 '룰렛 돌리기' 버튼을 눌러주세요!")
+        # max_students 변경 시 바로 반영되도록 rerurn
+        st.rerun()
 
     st.markdown("---") # 구분선 추가
 
@@ -65,6 +76,7 @@ def main():
                 # 추첨 결과를 크게 표시합니다.
                 st.balloons() # 축하 풍선 효과!
                 st.markdown(f"## 🎉 **{drawn_number}번 학생 당첨!**")
+                st.rerun() # 변경사항 즉시 반영
             else:
                 # 더 이상 뽑을 번호가 없을 때 경고 메시지를 표시합니다.
                 st.warning("더 이상 뽑을 학생이 없습니다. '룰렛 초기화' 버튼을 눌러 다시 시작하세요.")
