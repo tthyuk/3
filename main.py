@@ -5,7 +5,7 @@ import time # time 모듈을 추가하여 지연 시간을 줍니다.
 # Streamlit 앱의 메인 함수를 정의합니다.
 def main():
     # 애플리케이션의 제목을 설정합니다.
-    st.title("학생 발표 순서 추첨 룰렛 🎡")
+    st.title("학생 발표 순서 추첨 룰렛 �")
 
     # 세션 상태(session state)를 초기화합니다.
     # st.session_state는 Streamlit 앱의 상태를 저장하고 관리하는 데 사용됩니다.
@@ -26,12 +26,11 @@ def main():
     # st.session_state.max_students != len(st.session_state.drawn_numbers) + len(st.session_state.available_numbers)
     # 이 조건은 현재 설정된 총 학생 수와 실제 뽑혔거나 남아있는 학생 수의 합이 일치하지 않을 때 재초기화합니다.
     if 'available_numbers' not in st.session_state or \
-       (len(st.session_state.available_numbers) == 0 and st.session_state.max_students > 0) or \
+       (len(st.session_state.available_numbers) == 0 and st.session_state.max_students > 0 and not st.session_state.drawn_numbers) or \
        (st.session_state.max_students != len(st.session_state.drawn_numbers) + len(st.session_state.available_numbers)):
         # 뽑힌 번호가 없으면 (즉, 완전히 새로운 시작이거나 초기화된 상태) available_numbers를 완전히 재초기화
         if not st.session_state.drawn_numbers:
             st.session_state.available_numbers = list(range(1, st.session_state.max_students + 1))
-        # else: 일부 뽑힌 상태에서 리프레시 시, 남은 번호는 그대로 유지되도록 합니다. (현재 로직에서는 명시적인 else 로직 없음)
 
 
     # 총 학생 수를 입력받는 숫자 입력 필드를 생성합니다.
@@ -73,17 +72,23 @@ def main():
         if st.button("룰렛 돌리기 🎰", help="남아있는 학생 중 한 명을 무작위로 추첨합니다."):
             # available_numbers 리스트에 번호가 남아있는지 확인합니다.
             if st.session_state.available_numbers:
-                # 룰렛이 돌아가는 시각적인 효과를 추가합니다.
-                with st.spinner('룰렛이 힘차게 돌아가는 중...'):
-                    time.sleep(1.5) # 1.5초 동안 스피너를 보여줍니다.
+                # 룰렛 시각적 효과를 위한 placeholder 생성
+                roulette_placeholder = st.empty()
 
-                # random.choice를 사용하여 남아있는 번호 중 하나를 무작위로 선택합니다.
+                # 애니메이션 루프: 20번 숫자를 빠르게 변경하며 룰렛이 돌아가는 효과를 줍니다.
+                for i in range(20):
+                    # 시각적으로 빠르게 변경되는 숫자를 보여줍니다. (실제 당첨 번호와 무관)
+                    # 현재 남아있는 번호 중에서 무작위로 선택하여 시각적 효과를 강화합니다.
+                    display_number = random.choice(st.session_state.available_numbers)
+                    roulette_placeholder.markdown(f"<h1 style='text-align: center; color: #ff4b4b; font-size: 5em;'>{display_number}</h1>", unsafe_allow_html=True)
+                    time.sleep(0.1) # 0.1초 동안 대기
+
+                # 최종 결과 처리
                 drawn_number = random.choice(st.session_state.available_numbers)
-                # 선택된 번호를 available_numbers 리스트에서 제거합니다.
                 st.session_state.available_numbers.remove(drawn_number)
-                # 선택된 번호를 drawn_numbers 리스트의 끝에 추가합니다.
                 st.session_state.drawn_numbers.append(drawn_number)
-                # 추첨 결과를 크게 표시합니다.
+
+                roulette_placeholder.empty() # 애니메이션 숫자를 지우고 최종 결과 표시
                 st.balloons() # 축하 풍선 효과!
                 st.markdown(f"## 🎉 **{drawn_number}번 학생 당첨!**")
                 st.rerun() # 변경사항 즉시 반영
