@@ -44,9 +44,9 @@ def create_roulette_chart(numbers, selected_number=None):
         values=[1] * len(numbers),
         hole=0.4,
         marker=dict(colors=chart_colors, line=dict(color='#FFFFFF', width=2)),
-        textinfo='label+percent',
+        textinfo='label',
         textfont_size=12,
-        hovertemplate='<b>%{label}</b><br>확률: %{percent}<extra></extra>'
+        hovertemplate='<b>%{label}</b><extra></extra>'
     )])
     
     fig.update_layout(
@@ -119,30 +119,25 @@ with col1:
         if available_numbers:
             st.subheader(f"현재 추첨 가능한 번호: {len(available_numbers)}개")
             
-            # 룰렛 차트 표시
-            chart_placeholder = st.empty()
-            
+            # 룰렛 차트 표시 (고정 위치)
             if st.session_state.selected_number:
                 # 선택된 번호가 있을 때
                 fig = create_roulette_chart(available_numbers, st.session_state.selected_number)
-                chart_placeholder.plotly_chart(fig, use_container_width=True)
             else:
                 # 일반 상태
                 fig = create_roulette_chart(available_numbers)
-                chart_placeholder.plotly_chart(fig, use_container_width=True)
+            
+            chart_container = st.plotly_chart(fig, use_container_width=True, key="main_chart")
             
             # 추첨 버튼
             if st.button("🎯 룰렛 돌리기!", type="primary", use_container_width=True):
-                # 애니메이션 효과
-                animation_placeholder = st.empty()
-                
                 with st.spinner("룰렛이 돌아가고 있습니다..."):
-                    # 여러 번 무작위 번호를 보여주는 애니메이션
+                    # 애니메이션: 기존 차트 위치에서 업데이트
                     for i in range(8):
                         temp_number = random.choice(available_numbers)
                         temp_fig = create_roulette_chart(available_numbers, temp_number)
-                        animation_placeholder.plotly_chart(temp_fig, use_container_width=True, key=f"animation_{i}")
-                        time.sleep(0.2)
+                        chart_container = st.plotly_chart(temp_fig, use_container_width=True, key="main_chart")
+                        time.sleep(0.15)
                     
                     # 최종 선택
                     selected_number = draw_number(available_numbers)
@@ -152,16 +147,16 @@ with col1:
                         st.session_state.excluded_numbers.append(selected_number)
                         st.session_state.draw_history.append(selected_number)
                         
-                        # 최종 결과 차트
+                        # 최종 결과 차트 (같은 위치에 표시)
                         final_fig = create_roulette_chart(available_numbers, selected_number)
-                        animation_placeholder.plotly_chart(final_fig, use_container_width=True, key="final_result")
+                        chart_container = st.plotly_chart(final_fig, use_container_width=True, key="main_chart")
                         
                         # 결과 표시
                         st.success(f"🎉 선택된 번호: **{selected_number}번**")
                         st.balloons()
                         
-                        # 잠시 후 차트 업데이트
-                        time.sleep(2)
+                        # 잠시 후 페이지 새로고침
+                        time.sleep(1.5)
                         st.rerun()
         else:
             st.info("🎊 모든 학생이 발표를 완료했습니다!")
