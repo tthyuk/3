@@ -1,5 +1,6 @@
 import streamlit as st
 import random
+import time # time 모듈을 추가하여 지연 시간을 줍니다.
 
 # Streamlit 앱의 메인 함수를 정의합니다.
 def main():
@@ -72,6 +73,10 @@ def main():
         if st.button("룰렛 돌리기 🎰", help="남아있는 학생 중 한 명을 무작위로 추첨합니다."):
             # available_numbers 리스트에 번호가 남아있는지 확인합니다.
             if st.session_state.available_numbers:
+                # 룰렛이 돌아가는 시각적인 효과를 추가합니다.
+                with st.spinner('룰렛이 힘차게 돌아가는 중...'):
+                    time.sleep(1.5) # 1.5초 동안 스피너를 보여줍니다.
+
                 # random.choice를 사용하여 남아있는 번호 중 하나를 무작위로 선택합니다.
                 drawn_number = random.choice(st.session_state.available_numbers)
                 # 선택된 번호를 available_numbers 리스트에서 제거합니다.
