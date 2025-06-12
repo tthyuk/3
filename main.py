@@ -78,26 +78,30 @@ def main():
         # 번호가 룰렛 중앙으로부터 배치될 반지름 (wheel_radius_css - 여백)
         number_radial_distance = wheel_radius_css * 0.7 # 룰렛 반지름의 70% 지점에 배치
 
+        # wheel_content_html 변수를 먼저 초기화하여 NameError를 방지합니다.
+        wheel_content_html = "" 
+        
         # 전체 학생 수를 기준으로 고정된 룰렛 칸 수를 생성합니다. (뽑히면 숨김 처리)
         total_fixed_segments = st.session_state.max_students
-        # 각 칸이 차지하는 각도 (360도를 전체 칸 수로 나눔)
-        segment_angle_val_for_fixed = 360 / total_fixed_segments if total_fixed_segments > 0 else 0
-
-        # 시각적 구분을 위한 색상 팔레트 (다양한 색상 추가)
-        segment_colors = [
-            "#FFD700", "#FF6347", "#6A5ACD", "#32CD32", "#8A2BE2",
-            "#FF4500", "#1E90FF", "#DAA520", "#DC143C", "#00CED1",
-            "#FF8C00", "#4B0082", "#7FFF00", "#BA55D3", "#F0E68C",
-            "#ADD8E6", "#FFA07A", "#90EE90", "#DDA0DD", "#FFE4B5",
-            "#87CEEB", "#FFDAB9", "#BDB76B", "#FA8072", "#AFEEEE",
-            "#F4A460", "#EE82EE", "#00FA9A", "#FFC0CB", "#6495ED"
-        ]
-
-        segments_html = []
+        
         if total_fixed_segments == 0:
             # 학생 수가 0일 경우 메시지 표시
             wheel_content_html = "<div class='roulette-no-numbers'>학생 수를 입력하세요.</div>"
         else:
+            # 각 칸이 차지하는 각도 (360도를 전체 칸 수로 나눔)
+            segment_angle_val_for_fixed = 360 / total_fixed_segments
+
+            # 시각적 구분을 위한 색상 팔레트 (다양한 색상 추가)
+            segment_colors = [
+                "#FFD700", "#FF6347", "#6A5ACD", "#32CD32", "#8A2BE2",
+                "#FF4500", "#1E90FF", "#DAA520", "#DC143C", "#00CED1",
+                "#FF8C00", "#4B0082", "#7FFF00", "#BA55D3", "#F0E68C",
+                "#ADD8E6", "#FFA07A", "#90EE90", "#DDA0DD", "#FFE4B5",
+                "#87CEEB", "#FFDAB9", "#BDB76B", "#FA8072", "#AFEEEE",
+                "#F4A460", "#EE82EE", "#00FA9A", "#FFC0CB", "#6495ED"
+            ]
+
+            segments_html = []
             # 각 룰렛 칸(세그먼트)을 생성하고 배치합니다.
             for i in range(total_fixed_segments):
                 num = i + 1 # 1부터 시작하는 학생 번호
@@ -127,6 +131,9 @@ def main():
                 </div>
                 """)
             wheel_content_html = ''.join(segments_html)
+
+        # 룰렛 바퀴 전체의 HTML을 구성합니다. wheel_content_html은 항상 정의됩니다.
+        wheel_html = f"<div class='roulette-wheel' style='transform: rotate({current_rotation}deg);'>{ wheel_content_html }</div>"
 
         # 룰렛 중앙에 추첨된 번호 (애니메이션 중 또는 최종 결과)를 표시합니다.
         # 이 숫자는 룰렛 바퀴의 회전과 별개로 항상 중앙에 고정되어 표시됩니다.
