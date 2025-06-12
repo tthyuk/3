@@ -96,6 +96,8 @@ else:
         if st.session_state.remaining_numbers:
             # 남은 번호를 정렬하여 보기 좋게 표시
             st.session_state.remaining_numbers.sort()
-            st.write(st.session_state.remaining_numbers)
+            # for 반복문을 사용하여 각 번호를 markdown으로 출력 (★수정된 부분★)
+            for number in st.session_state.remaining_numbers:
+                st.markdown(f"  - {number}번") # 들여쓰기와 함께 리스트 형태로 표시
         else:
             st.text("남은 번호가 없습니다.")
