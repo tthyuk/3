@@ -67,15 +67,6 @@ def draw_number(available_numbers):
     if not available_numbers:
         return None
     
-    # 애니메이션 효과를 위한 여러 번 돌리기
-    placeholder = st.empty()
-    
-    for i in range(10):
-        temp_number = random.choice(available_numbers)
-        temp_fig = create_roulette_chart(available_numbers, temp_number)
-        placeholder.plotly_chart(temp_fig, use_container_width=True)
-        time.sleep(0.1)
-    
     # 최종 선택
     selected = random.choice(available_numbers)
     return selected
@@ -142,7 +133,18 @@ with col1:
             
             # 추첨 버튼
             if st.button("🎯 룰렛 돌리기!", type="primary", use_container_width=True):
+                # 애니메이션 효과
+                animation_placeholder = st.empty()
+                
                 with st.spinner("룰렛이 돌아가고 있습니다..."):
+                    # 여러 번 무작위 번호를 보여주는 애니메이션
+                    for i in range(8):
+                        temp_number = random.choice(available_numbers)
+                        temp_fig = create_roulette_chart(available_numbers, temp_number)
+                        animation_placeholder.plotly_chart(temp_fig, use_container_width=True, key=f"animation_{i}")
+                        time.sleep(0.2)
+                    
+                    # 최종 선택
                     selected_number = draw_number(available_numbers)
                     
                     if selected_number:
@@ -150,12 +152,16 @@ with col1:
                         st.session_state.excluded_numbers.append(selected_number)
                         st.session_state.draw_history.append(selected_number)
                         
+                        # 최종 결과 차트
+                        final_fig = create_roulette_chart(available_numbers, selected_number)
+                        animation_placeholder.plotly_chart(final_fig, use_container_width=True, key="final_result")
+                        
                         # 결과 표시
                         st.success(f"🎉 선택된 번호: **{selected_number}번**")
                         st.balloons()
                         
-                        # 차트 업데이트
-                        time.sleep(1)
+                        # 잠시 후 차트 업데이트
+                        time.sleep(2)
                         st.rerun()
         else:
             st.info("🎊 모든 학생이 발표를 완료했습니다!")
