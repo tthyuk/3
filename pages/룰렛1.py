@@ -131,28 +131,23 @@ with col1:
             
             # 추첨 버튼
             if st.button("🎯 룰렛 돌리기!", type="primary", use_container_width=True):
-                # 애니메이션 효과를 위한 임시 컨테이너
+                # 간단한 텍스트 애니메이션
                 with st.container():
-                    animation_text = st.empty()
-                    animation_chart = st.empty()
+                    progress_bar = st.progress(0)
+                    status_text = st.empty()
                     
-                    # 애니메이션 텍스트 효과
-                    animation_messages = [
-                        "🎲 룰렛이 돌아가고 있습니다...",
-                        "🌟 번호를 선택하고 있습니다...",
-                        "⭐ 거의 다 됐습니다...",
-                        "🎯 결과가 나왔습니다!"
-                    ]
-                    
-                    for i, message in enumerate(animation_messages):
-                        animation_text.info(message)
-                        
-                        # 각 단계마다 다른 번호들을 임시로 하이라이트
-                        for j in range(2):
-                            temp_number = random.choice(available_numbers)
-                            temp_fig = create_roulette_chart(available_numbers, temp_number)
-                            animation_chart.plotly_chart(temp_fig, use_container_width=True)
-                            time.sleep(0.3)
+                    # 진행 상황 표시
+                    for i in range(100):
+                        progress_bar.progress(i + 1)
+                        if i < 30:
+                            status_text.info("🎲 룰렛을 돌리고 있습니다...")
+                        elif i < 60:
+                            status_text.info("🌟 번호를 선택하고 있습니다...")
+                        elif i < 90:
+                            status_text.info("⭐ 거의 다 됐습니다...")
+                        else:
+                            status_text.info("🎯 결과가 나옵니다!")
+                        time.sleep(0.03)
                     
                     # 최종 선택
                     selected_number = draw_number(available_numbers)
@@ -163,17 +158,16 @@ with col1:
                         st.session_state.excluded_numbers.append(selected_number)
                         st.session_state.draw_history.append(selected_number)
                         
-                        # 최종 결과 표시
-                        final_fig = create_roulette_chart(available_numbers, selected_number)
-                        animation_chart.plotly_chart(final_fig, use_container_width=True)
-                        animation_text.empty()
+                        # 진행 바와 상태 텍스트 제거
+                        progress_bar.empty()
+                        status_text.empty()
                         
                         # 결과 메시지
                         st.success(f"🎉 선택된 번호: **{selected_number}번**")
                         st.balloons()
                         
-                        # 잠시 후 페이지 새로고침
-                        time.sleep(2)
+                        # 페이지 새로고침
+                        time.sleep(1)
                         st.rerun()
         else:
             st.info("🎊 모든 학생이 발표를 완료했습니다!")
