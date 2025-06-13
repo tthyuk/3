@@ -6,13 +6,13 @@ import math
 # --- 페이지 기본 설정 ---
 st.set_page_config(
     page_title="발표 순서 추첨기",
-    page_icon="🎡",
-    layout="wide" # 전체 화면을 더 넓게 사용하도록 설정
+    page_icon="🎨",
+    layout="wide"
 )
 
 # --- 앱 제목 ---
-st.title("🎡 발표 순서 추첨 룰렛")
-st.markdown("발표 순서를 공정하고 재미있게 추첨해 보세요!")
+st.title("🎨 컬러 룰렛으로 순서 추첨하기")
+st.markdown("알록달록한 룰렛으로 발표 순서를 재미있게 정해보세요!")
 st.write("---")
 
 # --- Session State 초기화 ---
@@ -22,36 +22,98 @@ if 'drawn_numbers' not in st.session_state: st.session_state.drawn_numbers = []
 if 'last_drawn' not in st.session_state: st.session_state.last_drawn = None
 if 'is_drawing' not in st.session_state: st.session_state.is_drawing = False
 
-# --- 룰렛 HTML/CSS 생성 함수 ---
-def create_roulette_html(numbers, highlighted_number=None, final_pick=False, top_number=None):
-    WHEEL_SIZE, NUMBER_DIV_SIZE, PADDING_FROM_EDGE = 350, 32, 35
-    font_size = "14px" if len(numbers) >= 18 else "16px"
-    items_html, angle_step = "", 360 / len(numbers) if len(numbers) > 0 else 0
-    path_radius, center_offset = (WHEEL_SIZE / 2) - PADDING_FROM_EDGE, (WHEEL_SIZE / 2) - (NUMBER_DIV_SIZE / 2)
-    offset_index = numbers.index(top_number) if top_number and top_number in numbers else 0
+# --- 컬러 룰렛 HTML/CSS 생성 함수 (완전 교체) ---
+def create_roulette_html(numbers, top_number=None):
+    """CSS conic-gradient를 사용하여 컬러 파이 차트 룰렛을 생성합니다."""
+    
+    WHEEL_SIZE = 380
+    
+    # 다채로운 파스텔 색상 팔레트
+    colors = [
+        "#FFADAD", "#FFD6A5", "#FDFFB6", "#CAFFBF", "#9BF6FF", 
+        "#A0C4FF", "#BDB2FF", "#FFC6FF", "#ffc8dd", "#f8edeb"
+    ]
+    
+    # 그라디언트 및 라벨 생성
+    gradient_parts = []
+    label_parts = []
+    num_items = len(numbers)
+    angle_step = 360 / num_items if num_items > 0 else 0
 
     for i, num in enumerate(numbers):
-        angle = math.radians((i - offset_index) * angle_step - 90)
-        x, y = path_radius * math.cos(angle) + center_offset, path_radius * math.sin(angle) + center_offset
+        color = colors[i % len(colors)]
+        start_angle = i * angle_step
+        end_angle = (i + 1) * angle_step
+        gradient_parts.append(f"{color} {start_angle}deg {end_angle}deg")
         
-        is_highlighted = (num == highlighted_number)
-        opacity = 0.3 if final_pick and not is_highlighted else 1.0
-        bg_color = "orange" if is_highlighted and not final_pick else "limegreen" if is_highlighted and final_pick else "white"
-        color = "white" if is_highlighted else "black"
+        # 라벨 위치 계산 (각 조각의 중앙)
+        label_angle_deg = start_angle + angle_step / 2
+        label_angle_rad = math.radians(label_angle_deg)
+        radius = WHEEL_SIZE * 0.35 # 중심으로부터의 거리
+        x = radius * math.cos(label_angle_rad) + (WHEEL_SIZE / 2)
+        y = radius * math.sin(label_angle_rad) + (WHEEL_SIZE / 2)
+        
+        is_highlighted = (num == top_number)
         font_weight = "bold" if is_highlighted else "normal"
-        border_width = 3 if is_highlighted else 1
-        border_color = "orange" if is_highlighted and not final_pick else "limegreen" if is_highlighted and final_pick else "#ccc"
+        font_size = "1.2em" if is_highlighted else "1em"
         
-        items_html += f'<div class="number" style="width: {NUMBER_DIV_SIZE}px; height: {NUMBER_DIV_SIZE}px; top: {y}px; left: {x}px; background-color: {bg_color}; color: {color}; font-weight: {font_weight}; border: {border_width}px solid {border_color}; font-size: {font_size}; opacity: {opacity};">{num}</div>'
+        label_parts.append(f'<div class="label" style="top: {y}px; left: {x}px; font-weight: {font_weight}; font-size:{font_size};">번호 {num}</div>')
+    
+    gradient_str = ", ".join(gradient_parts)
+    labels_str = "".join(label_parts)
 
+    # 회전 각도 계산
+    rotation_angle = 0
+    if top_number and top_number in numbers:
+        idx = numbers.index(top_number)
+        # 선택된 조각의 중앙이 12시 방향(-90도)으로 오도록 회전
+        rotation_angle = - (idx * angle_step + angle_step / 2) - 90
+        
     html = f"""
     <style>
-        .roulette-container {{ display: flex; justify-content: center; align-items: center; height: {WHEEL_SIZE + 20}px; }}
-        .roulette-wheel {{ width: {WHEEL_SIZE}px; height: {WHEEL_SIZE}px; border: 10px solid #333; border-radius: 50%; position: relative; background: #f0f2f6; box-shadow: 0 0 20px rgba(0,0,0,0.2); }}
-        .pointer {{ width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 30px solid red; position: absolute; top: -30px; left: calc(50% - 15px); z-index: 10; }}
-        .number {{ position: absolute; border-radius: 50%; display: flex; justify-content: center; align-items: center; transition: opacity 0.5s; box-sizing: border-box; }}
+        .roulette-container {{ 
+            display: flex; justify-content: center; align-items: center; 
+            height: {WHEEL_SIZE + 40}px; position: relative;
+        }}
+        .roulette-wheel {{
+            width: {WHEEL_SIZE}px; height: {WHEEL_SIZE}px;
+            border-radius: 50%;
+            background: conic-gradient({gradient_str});
+            transition: transform 0.2s ease-out;
+            transform: rotate({rotation_angle}deg);
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+            position: relative;
+        }}
+        .wheel-center {{
+            width: 35%; height: 35%;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            border: 5px solid #fff;
+        }}
+        .pointer {{ 
+            width: 0; height: 0; 
+            border-left: 15px solid transparent; border-right: 15px solid transparent;
+            border-bottom: 30px solid red; 
+            position: absolute; top: -5px; left: calc(50% - 15px); z-index: 10;
+        }}
+        .label {{
+            position: absolute;
+            transform: translate(-50%, -50%);
+            color: #333;
+            text-shadow: 0 0 3px white;
+            transition: all 0.2s;
+        }}
     </style>
-    <div class="roulette-container"><div class="roulette-wheel"><div class="pointer"></div>{items_html}</div></div>
+    <div class="roulette-container">
+        <div class="pointer"></div>
+        <div class="roulette-wheel">
+            <div class="wheel-center"></div>
+            {labels_str}
+        </div>
+    </div>
     """
     return html
 
@@ -67,9 +129,7 @@ with st.sidebar:
         time.sleep(1)
         st.rerun()
 
-# ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-# 화면 전체를 2:1 비율의 열로 분할
-# ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+# --- 메인 레이아웃 분할 ---
 main_col, result_col = st.columns([2, 1])
 
 # --- 왼쪽 메인 화면 (룰렛) ---
@@ -81,12 +141,12 @@ with main_col:
         
         if st.session_state.last_drawn and not st.session_state.is_drawing:
             display_numbers = sorted(st.session_state.remaining_numbers + [st.session_state.last_drawn])
-            roulette_html = create_roulette_html(display_numbers, highlighted_number=st.session_state.last_drawn, final_pick=True, top_number=st.session_state.last_drawn)
+            roulette_html = create_roulette_html(display_numbers, top_number=st.session_state.last_drawn)
             roulette_placeholder.markdown(roulette_html, unsafe_allow_html=True)
             st.markdown(f"<h1 style='text-align: center; color: green;'>🎉 {st.session_state.last_drawn}번 당첨! 🎉</h1>", unsafe_allow_html=True)
         else:
             display_numbers = sorted(st.session_state.remaining_numbers)
-            roulette_html = create_roulette_html(display_numbers)
+            roulette_html = create_roulette_html(display_numbers, top_number=display_numbers[0] if display_numbers else None)
             roulette_placeholder.markdown(roulette_html, unsafe_allow_html=True)
 
         st.markdown("---")
@@ -94,14 +154,14 @@ with main_col:
         if st.button("🚀 추첨하기!", type="primary", use_container_width=True, disabled=not st.session_state.remaining_numbers):
             if st.session_state.remaining_numbers:
                 st.session_state.is_drawing = True
-                animation_duration, sleep_time = 20, 0.05
+                animation_duration, sleep_time = 25, 0.05
                 display_numbers = sorted(st.session_state.remaining_numbers)
                 
                 for i in range(animation_duration):
                     temp_pick = random.choice(display_numbers)
-                    roulette_html = create_roulette_html(display_numbers, highlighted_number=temp_pick, top_number=temp_pick)
+                    roulette_html = create_roulette_html(display_numbers, top_number=temp_pick)
                     roulette_placeholder.markdown(roulette_html, unsafe_allow_html=True)
-                    if i > animation_duration*0.8: time.sleep(sleep_time*3)
+                    if i > animation_duration*0.85: time.sleep(sleep_time*3)
                     elif i > animation_duration*0.6: time.sleep(sleep_time*2)
                     else: time.sleep(sleep_time)
                 
@@ -116,21 +176,15 @@ with main_col:
 with result_col:
     st.subheader("🎯 추첨된 순서")
     if st.session_state.drawn_numbers:
-        # 결과를 담을 컨테이너 생성
-        with st.container(height=200): # 높이를 지정하여 스크롤 가능하게 만듦
-            for i, number in enumerate(st.session_state.drawn_numbers): 
-                st.markdown(f"**{i+1}번째**: {number}번")
-    else: 
-        st.text("아직 추첨된 번호가 없습니다.")
+        with st.container(height=200):
+            for i, number in enumerate(st.session_state.drawn_numbers): st.markdown(f"**{i+1}번째**: {number}번")
+    else: st.text("아직 추첨된 번호가 없습니다.")
 
     st.write("---")
     
     st.subheader("⏳ 남은 번호")
     if st.session_state.remaining_numbers:
-        # 결과를 담을 컨테이너 생성
-        with st.container(height=250): # 높이를 지정하여 스크롤 가능하게 만듦
+        with st.container(height=250):
             st.session_state.remaining_numbers.sort()
-            for number in st.session_state.remaining_numbers: 
-                st.markdown(f"  - {number}번")
-    else: 
-        st.text("남은 번호가 없습니다.")
+            for number in st.session_state.remaining_numbers: st.markdown(f"  - {number}번")
+    else: st.text("남은 번호가 없습니다.")
