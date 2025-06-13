@@ -29,12 +29,9 @@ if 'is_drawing' not in st.session_state:
 def create_roulette_html(numbers, highlighted_number=None, final_pick=False):
     """동적으로 룰렛 모양의 HTML과 CSS를 생성합니다."""
     wheel_size = 350
-    if not numbers:
-        font_size = "20px"
-    elif len(numbers) < 15:
-        font_size = "20px"
-    else:
-        font_size = "14px"
+    if not numbers: font_size = "20px"
+    elif len(numbers) < 15: font_size = "20px"
+    else: font_size = "14px"
     
     items_html = ""
     angle_step = 360 / len(numbers) if len(numbers) > 1 else 0
@@ -50,11 +47,7 @@ def create_roulette_html(numbers, highlighted_number=None, final_pick=False):
         font_weight = "bold" if is_highlighted else "normal"
         border = "2px solid orange" if is_highlighted and not final_pick else "2px solid limegreen" if is_highlighted and final_pick else "1px solid #ccc"
 
-        items_html += f"""
-        <div class="number" style="top: {y}px; left: {x}px; background-color: {bg_color}; color: {color}; font-weight: {font_weight}; border: {border}; font-size: {font_size};">
-            {num}
-        </div>
-        """
+        items_html += f'<div class="number" style="top: {y}px; left: {x}px; background-color: {bg_color}; color: {color}; font-weight: {font_weight}; border: {border}; font-size: {font_size};">{num}</div>'
 
     html = f"""
     <style>
@@ -63,12 +56,7 @@ def create_roulette_html(numbers, highlighted_number=None, final_pick=False):
         .pointer {{ width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 30px solid red; position: absolute; top: -30px; left: calc(50% - 15px); z-index: 10; }}
         .number {{ position: absolute; width: 30px; height: 30px; border-radius: 50%; display: flex; justify-content: center; align-items: center; transition: all 0.1s; }}
     </style>
-    <div class="roulette-container">
-        <div class="roulette-wheel">
-            <div class="pointer"></div>
-            {items_html}
-        </div>
-    </div>
+    <div class="roulette-container"><div class="roulette-wheel"><div class="pointer"></div>{items_html}</div></div>
     """
     return html
 
@@ -97,17 +85,16 @@ else:
     roulette_placeholder = st.empty()
     
     if st.session_state.last_drawn and not st.session_state.is_drawing:
-        # ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-        # 여기가 수정된 부분입니다.
-        # ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
         display_numbers = st.session_state.remaining_numbers + [st.session_state.last_drawn]
-        display_numbers.sort() # 번호를 숫자 순서대로 정렬!
+        display_numbers.sort()
         roulette_html = create_roulette_html(display_numbers, highlighted_number=st.session_state.last_drawn, final_pick=True)
         
+        # ★★★ 여기에 unsafe_allow_html=True 가 있는지 확인하세요 (1/3) ★★★
         roulette_placeholder.markdown(roulette_html, unsafe_allow_html=True)
         st.markdown(f"<h2 style='text-align: center; color: green;'>🎉 {st.session_state.last_drawn}번 당첨! 🎉</h2>", unsafe_allow_html=True)
     else:
         roulette_html = create_roulette_html(st.session_state.remaining_numbers)
+        # ★★★ 여기에 unsafe_allow_html=True 가 있는지 확인하세요 (2/3) ★★★
         roulette_placeholder.markdown(roulette_html, unsafe_allow_html=True)
 
     st.markdown("---")
@@ -121,6 +108,7 @@ else:
             for i in range(animation_duration):
                 temp_pick = random.choice(st.session_state.remaining_numbers)
                 roulette_html = create_roulette_html(st.session_state.remaining_numbers, highlighted_number=temp_pick)
+                # ★★★ 여기에 unsafe_allow_html=True 가 있는지 확인하세요 (3/3) ★★★
                 roulette_placeholder.markdown(roulette_html, unsafe_allow_html=True)
                 if i > animation_duration * 0.8: time.sleep(sleep_time * 3)
                 elif i > animation_duration * 0.6: time.sleep(sleep_time * 2)
