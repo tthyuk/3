@@ -22,12 +22,11 @@ if 'drawn_numbers' not in st.session_state: st.session_state.drawn_numbers = []
 if 'last_drawn' not in st.session_state: st.session_state.last_drawn = None
 if 'is_drawing' not in st.session_state: st.session_state.is_drawing = False
 
-# --- 컬러 룰렛 HTML/CSS 생성 함수 ---
+# --- 컬러 룰렛 HTML/CSS 생성 함수 (숫자 역회전 기능 추가) ---
 def create_roulette_html(numbers, top_number=None):
-    """CSS conic-gradient를 사용하여 컬러 파이 차트 룰렛을 생성합니다."""
+    """룰렛은 회전하고 숫자는 수평을 유지하는 룰렛을 생성합니다."""
     
     WHEEL_SIZE = 380
-    
     colors = [
         "#FFADAD", "#FFD6A5", "#FDFFB6", "#CAFFBF", "#9BF6FF", 
         "#A0C4FF", "#BDB2FF", "#FFC6FF", "#ffc8dd", "#f8edeb"
@@ -37,6 +36,12 @@ def create_roulette_html(numbers, top_number=None):
     num_items = len(numbers)
     angle_step = 360 / num_items if num_items > 0 else 0
 
+    # 회전 각도 계산
+    rotation_angle = 0
+    if top_number and top_number in numbers:
+        idx = numbers.index(top_number)
+        rotation_angle = - (idx * angle_step + angle_step / 2) - 90
+
     for i, num in enumerate(numbers):
         color = colors[i % len(colors)]
         start_angle, end_angle = i * angle_step, (i + 1) * angle_step
@@ -45,32 +50,43 @@ def create_roulette_html(numbers, top_number=None):
         label_angle_deg = start_angle + angle_step / 2
         label_angle_rad = math.radians(label_angle_deg)
         radius = WHEEL_SIZE * 0.35
-        x, y = radius * math.cos(label_angle_rad) + (WHEEL_SIZE / 2), radius * math.sin(label_angle_rad) + (WHEEL_SIZE / 2)
+        x = radius * math.cos(label_angle_rad) + (WHEEL_SIZE / 2)
+        y = radius * math.sin(label_angle_rad) + (WHEEL_SIZE / 2)
         
         is_highlighted = (num == top_number)
         font_weight = "bold" if is_highlighted else "normal"
-        # 폰트 크기를 키워서 숫자만 있어도 잘 보이도록 조정
-        font_size = "1.5em" if is_highlighted else "1.3em" 
+        font_size = "1.5em" if is_highlighted else "1.3em"
         
         # ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-        # "번호" 문구를 제거하고 숫자만 표시하도록 수정
+        # 숫자를 역회전시켜 수평을 유지하는 로직
         # ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-        label_parts.append(f'<div class="label" style="top: {y}px; left: {x}px; font-weight: {font_weight}; font-size:{font_size};">{num}</div>')
+        counter_rotation = -rotation_angle
+        transform_style = f"translate(-50%, -50%) rotate({counter_rotation}deg)"
+        
+        label_parts.append(f'<div class="label" style="top: {y}px; left: {x}px; font-weight: {font_weight}; font-size:{font_size}; transform: {transform_style};">{num}</div>')
     
     gradient_str, labels_str = ", ".join(gradient_parts), "".join(label_parts)
-
-    rotation_angle = 0
-    if top_number and top_number in numbers:
-        idx = numbers.index(top_number)
-        rotation_angle = - (idx * angle_step + angle_step / 2) - 90
         
     html = f"""
     <style>
         .roulette-container {{ display: flex; justify-content: center; align-items: center; height: {WHEEL_SIZE + 40}px; position: relative; }}
-        .roulette-wheel {{ width: {WHEEL_SIZE}px; height: {WHEEL_SIZE}px; border-radius: 50%; background: conic-gradient({gradient_str}); transition: transform 0.2s ease-out; transform: rotate({rotation_angle}deg); box-shadow: 0 0 20px rgba(0,0,0,0.2); position: relative; }}
+        .roulette-wheel {{ 
+            width: {WHEEL_SIZE}px; height: {WHEEL_SIZE}px;
+            border-radius: 50%;
+            background: conic-gradient({gradient_str});
+            transition: transform 0.2s ease-out;
+            transform: rotate({rotation_angle}deg);
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+            position: relative;
+        }}
         .wheel-center {{ width: 35%; height: 35%; background: white; border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border: 5px solid #fff; }}
         .pointer {{ width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-bottom: 30px solid red; position: absolute; top: -5px; left: calc(50% - 15px); z-index: 10; }}
-        .label {{ position: absolute; transform: translate(-50%, -50%); color: #333; text-shadow: 0 0 3px white; transition: all 0.2s; }}
+        .label {{ 
+            position: absolute;
+            color: #333;
+            text-shadow: 0 0 3px white;
+            transition: font-size 0.2s, font-weight 0.2s;
+        }}
     </style>
     <div class="roulette-container">
         <div class="pointer"></div>
