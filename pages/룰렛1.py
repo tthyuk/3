@@ -23,8 +23,8 @@ if 'total_numbers' not in st.session_state:
 if 'selected_number' not in st.session_state:
     st.session_state.selected_number = None
 
-def create_roulette_chart(numbers, selected_number=None):
-    """룰렛 차트 생성"""
+def create_roulette_chart(numbers, selected_number=None, rotation_angle=0):
+    """룰렛 차트 생성 (회전 각도 포함)"""
     if not numbers:
         return None
     
@@ -46,7 +46,8 @@ def create_roulette_chart(numbers, selected_number=None):
         marker=dict(colors=chart_colors, line=dict(color='#FFFFFF', width=2)),
         textinfo='label',
         textfont_size=12,
-        hovertemplate='<b>%{label}</b><extra></extra>'
+        hovertemplate='<b>%{label}</b><extra></extra>',
+        rotation=rotation_angle  # 회전 각도 적용
     )])
     
     fig.update_layout(
@@ -119,56 +120,89 @@ with col1:
         if available_numbers:
             st.subheader(f"현재 추첨 가능한 번호: {len(available_numbers)}개")
             
-            # 룰렛 차트 표시
-            if st.session_state.selected_number:
-                # 선택된 번호가 있을 때
-                fig = create_roulette_chart(available_numbers, st.session_state.selected_number)
-                st.plotly_chart(fig, use_container_width=True)
-            else:
-                # 일반 상태
-                fig = create_roulette_chart(available_numbers)
-                st.plotly_chart(fig, use_container_width=True)
+            # 룰렛 차트 표시용 컨테이너
+            chart_container = st.container()
+            
+            with chart_container:
+                # 룰렛 차트 표시
+                if st.session_state.selected_number:
+                    # 선택된 번호가 있을 때
+                    fig = create_roulette_chart(available_numbers, st.session_state.selected_number)
+                    st.plotly_chart(fig, use_container_width=True, key="static_chart")
+                else:
+                    # 일반 상태
+                    fig = create_roulette_chart(available_numbers)
+                    st.plotly_chart(fig, use_container_width=True, key="static_chart")
             
             # 추첨 버튼
             if st.button("🎯 룰렛 돌리기!", type="primary", use_container_width=True):
-                # 간단한 텍스트 애니메이션
-                with st.container():
-                    progress_bar = st.progress(0)
-                    status_text = st.empty()
+                # 기존 차트 숨기기
+                chart_container.empty()
+                
+                # 애니메이션용 새 컨테이너
+                animation_container = st.container()
+                
+                with animation_container:
+                    st.info("🎲 룰렛이 돌아가고 있습니다...")
                     
-                    # 진행 상황 표시
-                    for i in range(100):
-                        progress_bar.progress(i + 1)
-                        if i < 30:
-                            status_text.info("🎲 룰렛을 돌리고 있습니다...")
-                        elif i < 60:
-                            status_text.info("🌟 번호를 선택하고 있습니다...")
-                        elif i < 90:
-                            status_text.info("⭐ 거의 다 됐습니다...")
-                        else:
-                            status_text.info("🎯 결과가 나옵니다!")
-                        time.sleep(0.03)
+                    # 룰렛 회전 애니메이션
+                    chart_placeholder = st.empty()
                     
-                    # 최종 선택
-                    selected_number = draw_number(available_numbers)
+                    # 회전 애니메이션 (점진적으로 느려지는 효과)
+                    rotation_speeds = [30, 25, 20, 15, 12, 10, 8, 6, 4, 3, 2, 1]
+                    current_angle = 0
                     
-                    if selected_number:
-                        # 세션 상태 업데이트
-                        st.session_state.selected_number = selected_number
-                        st.session_state.excluded_numbers.append(selected_number)
-                        st.session_state.draw_history.append(selected_number)
+                    for speed in rotation_speeds:
+                        for _ in range(5):  # 각 속도마다 5번 회전
+                            current_angle += speed
+                            if current_angle >= 360:
+                                current_angle -= 360
+                            
+                            # 현재 각도에서 가장 가까운 번호 계산
+                            segment_angle = 360 / len(available_numbers)
+                            highlighted_index = int((360 - current_angle) / segment_angle) % len(available_numbers)
+                            temp_highlighted = available_numbers[highlighted_index]
+                            
+                            temp_fig = create_roulette_chart(available_numbers, temp_highlighted, current_angle)
+                            chart_placeholder.plotly_chart(temp_fig, use_container_width=True)
+                            time.sleep(0.1)
+                    
+                    # 최종 선택 (추가 몇 번 더 천천히 돌기)
+                    for _ in range(8):
+                        current_angle += 1
+                        if current_angle >= 360:
+                            current_angle -= 360
                         
-                        # 진행 바와 상태 텍스트 제거
-                        progress_bar.empty()
-                        status_text.empty()
+                        segment_angle = 360 / len(available_numbers)
+                        highlighted_index = int((360 - current_angle) / segment_angle) % len(available_numbers)
+                        temp_highlighted = available_numbers[highlighted_index]
                         
-                        # 결과 메시지
-                        st.success(f"🎉 선택된 번호: **{selected_number}번**")
-                        st.balloons()
-                        
-                        # 페이지 새로고침
-                        time.sleep(1)
-                        st.rerun()
+                        temp_fig = create_roulette_chart(available_numbers, temp_highlighted, current_angle)
+                        chart_placeholder.plotly_chart(temp_fig, use_container_width=True)
+                        time.sleep(0.2)
+                    
+                    # 최종 선택된 번호 결정
+                    final_angle = current_angle
+                    segment_angle = 360 / len(available_numbers)
+                    selected_index = int((360 - final_angle) / segment_angle) % len(available_numbers)
+                    selected_number = available_numbers[selected_index]
+                    
+                    # 세션 상태 업데이트
+                    st.session_state.selected_number = selected_number
+                    st.session_state.excluded_numbers.append(selected_number)
+                    st.session_state.draw_history.append(selected_number)
+                    
+                    # 최종 결과 표시
+                    final_fig = create_roulette_chart(available_numbers, selected_number, final_angle)
+                    chart_placeholder.plotly_chart(final_fig, use_container_width=True)
+                    
+                    # 결과 메시지
+                    st.success(f"🎉 선택된 번호: **{selected_number}번**")
+                    st.balloons()
+                    
+                    # 잠시 후 페이지 새로고침
+                    time.sleep(2)
+                    st.rerun()
         else:
             st.info("🎊 모든 학생이 발표를 완료했습니다!")
             st.success("수고하셨습니다!")
