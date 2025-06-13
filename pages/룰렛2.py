@@ -9,9 +9,9 @@ st.set_page_config(
     page_icon="🎡"
 )
 
-# --- 앱 제목 및 부제 수정 ---
+# --- 앱 제목 ---
 st.title("🎡 발표 순서 추첨 룰렛")
-st.markdown("발표 순서를 공정하고 재미있게 추첨해 보세요!") # ★★★ 사용자 친화적 문구로 변경 ★★★
+st.markdown("발표 순서를 공정하고 재미있게 추첨해 보세요!")
 
 # --- Session State 초기화 ---
 if 'total_students' not in st.session_state: st.session_state.total_students = 0
@@ -20,10 +20,8 @@ if 'drawn_numbers' not in st.session_state: st.session_state.drawn_numbers = []
 if 'last_drawn' not in st.session_state: st.session_state.last_drawn = None
 if 'is_drawing' not in st.session_state: st.session_state.is_drawing = False
 
-# --- 룰렛 HTML/CSS 생성 함수 (시각적 강조 추가) ---
+# --- 룰렛 HTML/CSS 생성 함수 (box-sizing 적용) ---
 def create_roulette_html(numbers, highlighted_number=None, final_pick=False, top_number=None):
-    """최종 당첨 시 다른 번호들을 흐리게 처리하는 기능 추가"""
-    
     WHEEL_SIZE, NUMBER_DIV_SIZE, PADDING_FROM_EDGE = 350, 32, 35
     font_size = "14px" if len(numbers) >= 18 else "16px"
     items_html, angle_step = "", 360 / len(numbers) if len(numbers) > 0 else 0
@@ -35,25 +33,29 @@ def create_roulette_html(numbers, highlighted_number=None, final_pick=False, top
         x, y = path_radius * math.cos(angle) + center_offset, path_radius * math.sin(angle) + center_offset
         
         is_highlighted = (num == highlighted_number)
-        
-        # ★★★ 당첨 시 다른 번호 흐리게 처리하는 로직 ★★★
-        opacity = 1.0
-        if final_pick and not is_highlighted:
-            opacity = 0.3 # 당첨되지 않은 번호는 흐리게
-        
+        opacity = 0.3 if final_pick and not is_highlighted else 1.0
         bg_color = "orange" if is_highlighted and not final_pick else "limegreen" if is_highlighted and final_pick else "white"
         color = "white" if is_highlighted else "black"
         font_weight = "bold" if is_highlighted else "normal"
-        border = "3px solid orange" if is_highlighted and not final_pick else "3px solid limegreen" if is_highlighted and final_pick else "1px solid #ccc"
-
-        items_html += f'<div class="number" style="width: {NUMBER_DIV_SIZE}px; height: {NUMBER_DIV_SIZE}px; top: {y}px; left: {x}px; background-color: {bg_color}; color: {color}; font-weight: {font_weight}; border: {border}; font-size: {font_size}; opacity: {opacity};">{num}</div>'
+        border_width = 3 if is_highlighted else 1
+        border_color = "orange" if is_highlighted and not final_pick else "limegreen" if is_highlighted and final_pick else "#ccc"
+        
+        items_html += f'<div class="number" style="width: {NUMBER_DIV_SIZE}px; height: {NUMBER_DIV_SIZE}px; top: {y}px; left: {x}px; background-color: {bg_color}; color: {color}; font-weight: {font_weight}; border: {border_width}px solid {border_color}; font-size: {font_size}; opacity: {opacity};">{num}</div>'
 
     html = f"""
     <style>
         .roulette-container {{ display: flex; justify-content: center; align-items: center; height: {WHEEL_SIZE + 20}px; }}
         .roulette-wheel {{ width: {WHEEL_SIZE}px; height: {WHEEL_SIZE}px; border: 10px solid #333; border-radius: 50%; position: relative; background: #f0f2f6; box-shadow: 0 0 20px rgba(0,0,0,0.2); }}
         .pointer {{ width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 30px solid red; position: absolute; top: -30px; left: calc(50% - 15px); z-index: 10; }}
-        .number {{ position: absolute; border-radius: 50%; display: flex; justify-content: center; align-items: center; transition: opacity 0.5s; }}
+        .number {{
+            position: absolute;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s;
+            box-sizing: border-box; /* ★★★★★ 중심을 맞추는 핵심 속성! ★★★★★ */
+        }}
     </style>
     <div class="roulette-container"><div class="roulette-wheel"><div class="pointer"></div>{items_html}</div></div>
     """
@@ -81,7 +83,6 @@ else:
         display_numbers = sorted(st.session_state.remaining_numbers + [st.session_state.last_drawn])
         roulette_html = create_roulette_html(display_numbers, highlighted_number=st.session_state.last_drawn, final_pick=True, top_number=st.session_state.last_drawn)
         roulette_placeholder.markdown(roulette_html, unsafe_allow_html=True)
-        # ★★★ 당첨 메시지 스타일 업그레이드 ★★★
         st.markdown(f"<h1 style='text-align: center; color: green;'>🎉 {st.session_state.last_drawn}번 당첨! 🎉</h1>", unsafe_allow_html=True)
     else:
         display_numbers = sorted(st.session_state.remaining_numbers)
