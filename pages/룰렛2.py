@@ -4,7 +4,6 @@ import time
 import math
 
 # --- 페이지 기본 설정 (가장 먼저 위치해야 합니다) ---
-# st.set_page_config()는 스크립트에서 다른 st 명령어보다 항상 먼저 실행되어야 합니다.
 st.set_page_config(
     page_title="발표 순서 추첨기",
     page_icon="🎡"
@@ -15,7 +14,6 @@ st.title("🎡 발표 순서 추첨 룰렛")
 st.markdown("룰렛 애니메이션이 추가된 버전입니다!")
 
 # --- Session State 초기화 ---
-# 앱이 재실행되어도 유지되어야 하는 값들을 저장합니다.
 if 'total_students' not in st.session_state:
     st.session_state.total_students = 0
 if 'remaining_numbers' not in st.session_state:
@@ -30,10 +28,8 @@ if 'is_drawing' not in st.session_state:
 # --- 룰렛 HTML/CSS 생성 함수 ---
 def create_roulette_html(numbers, highlighted_number=None, final_pick=False):
     """동적으로 룰렛 모양의 HTML과 CSS를 생성합니다."""
-    # 룰렛의 크기 설정
     wheel_size = 350
-    # 번호 개수에 따라 폰트 크기 조정
-    if not numbers: # numbers 리스트가 비어있을 경우에 대한 처리
+    if not numbers:
         font_size = "20px"
     elif len(numbers) < 15:
         font_size = "20px"
@@ -41,17 +37,14 @@ def create_roulette_html(numbers, highlighted_number=None, final_pick=False):
         font_size = "14px"
     
     items_html = ""
-    # 번호가 하나만 남아도 360도로 나누지 않도록 처리
     angle_step = 360 / len(numbers) if len(numbers) > 1 else 0
 
     for i, num in enumerate(numbers):
-        angle = math.radians(i * angle_step - 90) # -90은 12시 방향에서 시작하기 위함
+        angle = math.radians(i * angle_step - 90)
         x = (wheel_size / 2 - 25) * math.cos(angle) + (wheel_size / 2 - 15)
         y = (wheel_size / 2 - 25) * math.sin(angle) + (wheel_size / 2 - 15)
         
         is_highlighted = (num == highlighted_number)
-        
-        # 하이라이트 스타일
         bg_color = "orange" if is_highlighted and not final_pick else "limegreen" if is_highlighted and final_pick else "white"
         color = "white" if is_highlighted else "black"
         font_weight = "bold" if is_highlighted else "normal"
@@ -63,45 +56,12 @@ def create_roulette_html(numbers, highlighted_number=None, final_pick=False):
         </div>
         """
 
-    # 전체 HTML 구조
     html = f"""
     <style>
-        .roulette-container {{
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: {wheel_size + 20}px;
-        }}
-        .roulette-wheel {{
-            width: {wheel_size}px;
-            height: {wheel_size}px;
-            border: 10px solid #333;
-            border-radius: 50%;
-            position: relative;
-            background: #f0f2f6;
-            box-shadow: 0 0 20px rgba(0,0,0,0.2);
-        }}
-        .pointer {{
-            width: 0;
-            height: 0;
-            border-left: 15px solid transparent;
-            border-right: 15px solid transparent;
-            border-top: 30px solid red;
-            position: absolute;
-            top: -30px;
-            left: calc(50% - 15px);
-            z-index: 10;
-        }}
-        .number {{
-            position: absolute;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: all 0.1s;
-        }}
+        .roulette-container {{ display: flex; justify-content: center; align-items: center; height: {wheel_size + 20}px; }}
+        .roulette-wheel {{ width: {wheel_size}px; height: {wheel_size}px; border: 10px solid #333; border-radius: 50%; position: relative; background: #f0f2f6; box-shadow: 0 0 20px rgba(0,0,0,0.2); }}
+        .pointer {{ width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 30px solid red; position: absolute; top: -30px; left: calc(50% - 15px); z-index: 10; }}
+        .number {{ position: absolute; width: 30px; height: 30px; border-radius: 50%; display: flex; justify-content: center; align-items: center; transition: all 0.1s; }}
     </style>
     <div class="roulette-container">
         <div class="roulette-wheel">
@@ -134,14 +94,16 @@ with st.sidebar:
 if not st.session_state.remaining_numbers and not st.session_state.drawn_numbers:
     st.info("먼저 사이드바에서 전체 인원을 설정하고 '설정 및 초기화' 버튼을 눌러주세요.")
 else:
-    # 룰렛을 표시할 공간
     roulette_placeholder = st.empty()
     
-    # 마지막으로 뽑힌 번호 또는 기본 룰렛 표시
     if st.session_state.last_drawn and not st.session_state.is_drawing:
-        # 마지막 당첨자는 룰렛에 표시되도록 남은 번호에 임시로 추가
+        # ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+        # 여기가 수정된 부분입니다.
+        # ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
         display_numbers = st.session_state.remaining_numbers + [st.session_state.last_drawn]
+        display_numbers.sort() # 번호를 숫자 순서대로 정렬!
         roulette_html = create_roulette_html(display_numbers, highlighted_number=st.session_state.last_drawn, final_pick=True)
+        
         roulette_placeholder.markdown(roulette_html, unsafe_allow_html=True)
         st.markdown(f"<h2 style='text-align: center; color: green;'>🎉 {st.session_state.last_drawn}번 당첨! 🎉</h2>", unsafe_allow_html=True)
     else:
@@ -150,27 +112,20 @@ else:
 
     st.markdown("---")
     
-    # 추첨 버튼
     if st.button("🚀 추첨하기!", type="primary", use_container_width=True, disabled=not st.session_state.remaining_numbers):
         if st.session_state.remaining_numbers:
             st.session_state.is_drawing = True
             
-            # 애니메이션 효과
             animation_duration = 20
             sleep_time = 0.05
             for i in range(animation_duration):
                 temp_pick = random.choice(st.session_state.remaining_numbers)
                 roulette_html = create_roulette_html(st.session_state.remaining_numbers, highlighted_number=temp_pick)
                 roulette_placeholder.markdown(roulette_html, unsafe_allow_html=True)
-                # 마지막으로 갈수록 느려지게
-                if i > animation_duration * 0.8:
-                    time.sleep(sleep_time * 3)
-                elif i > animation_duration * 0.6:
-                    time.sleep(sleep_time * 2)
-                else:
-                    time.sleep(sleep_time)
+                if i > animation_duration * 0.8: time.sleep(sleep_time * 3)
+                elif i > animation_duration * 0.6: time.sleep(sleep_time * 2)
+                else: time.sleep(sleep_time)
             
-            # 최종 추첨
             pick = random.choice(st.session_state.remaining_numbers)
             st.session_state.last_drawn = pick
             st.session_state.remaining_numbers.remove(pick)
@@ -181,7 +136,6 @@ else:
         else:
             st.warning("모든 번호를 추첨했습니다!")
 
-    # --- 결과 표시 영역 ---
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("🎯 추첨된 순서")
